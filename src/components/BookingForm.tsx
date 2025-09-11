@@ -23,8 +23,31 @@ export const BookingForm = ({ room, onSubmit, onCancel }: BookingFormProps) => {
     endTime: "10:00",
     attendees: "",
     description: "",
+    department: "",
+    meetingType: "",
     isRecurring: false,
   });
+
+  const departments = [
+    "Engineering",
+    "Marketing", 
+    "Sales",
+    "Human Resources",
+    "Finance",
+    "Operations",
+    "Product",
+    "Customer Success",
+    "Legal",
+    "Executive"
+  ];
+
+  const meetingTypes = [
+    { value: "general", label: "General Meeting" },
+    { value: "external", label: "External Meeting" },
+    { value: "internal", label: "Internal Meeting" },
+    { value: "client", label: "Client Meeting" },
+    { value: "interview", label: "Interview" }
+  ];
 
   const timeSlots = Array.from({ length: 20 }, (_, i) => {
     const hour = Math.floor(i / 2) + 8;
@@ -93,7 +116,7 @@ export const BookingForm = ({ room, onSubmit, onCancel }: BookingFormProps) => {
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
                   {timeSlots.map((time) => (
                     <SelectItem key={time} value={time}>{time}</SelectItem>
                   ))}
@@ -107,9 +130,43 @@ export const BookingForm = ({ room, onSubmit, onCancel }: BookingFormProps) => {
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
                   {timeSlots.map((time) => (
                     <SelectItem key={time} value={time}>{time}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="department">Department *</Label>
+              <Select value={formData.department} onValueChange={(value) => setFormData({ ...formData, department: value })}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select your department" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
+                  {departments.map((dept) => (
+                    <SelectItem key={dept} value={dept.toLowerCase().replace(/\s+/g, '-')}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="meetingType">Meeting Type *</Label>
+              <Select value={formData.meetingType} onValueChange={(value) => setFormData({ ...formData, meetingType: value })}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select meeting type" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
+                  {meetingTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
