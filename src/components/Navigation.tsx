@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Users, Settings, Bell, Home } from "lucide-react";
+import { Calendar, Users, Settings, Bell, Home, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -13,6 +13,7 @@ export const Navigation = ({ activeView, onViewChange, notificationCount }: Navi
   const navItems = [
     { id: 'rooms', label: 'Rooms', icon: Home },
     { id: 'bookings', label: 'My Bookings', icon: Calendar },
+    { id: 'calendar', label: 'All Meetings', icon: CalendarDays },
     { id: 'checkin', label: 'Check In', icon: Users },
     { id: 'admin', label: 'Admin', icon: Settings },
   ];
@@ -74,7 +75,7 @@ export const Navigation = ({ activeView, onViewChange, notificationCount }: Navi
 
       {/* Mobile Navigation */}
       <div className="md:hidden border-t">
-        <div className="grid grid-cols-4 gap-1 p-2">
+        <div className="grid grid-cols-5 gap-1 p-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (

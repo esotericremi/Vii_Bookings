@@ -5,6 +5,7 @@ import { RoomCard } from "@/components/RoomCard";
 import { BookingForm } from "@/components/BookingForm";
 import { CheckInInterface } from "@/components/CheckInInterface";
 import { AdminDashboard } from "@/components/AdminDashboard";
+import { CalendarView } from "@/components/CalendarView";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -64,6 +65,70 @@ const Index = () => {
     roomName: 'Conference Room A',
     status: 'pending',
   };
+
+  // Mock bookings data for calendar view
+  const mockBookings: Booking[] = [
+    {
+      id: '1',
+      roomId: '1',
+      userId: 'user1',
+      userEmail: 'engineering.john@company.com',
+      title: 'Sprint Planning',
+      startTime: new Date(2024, 0, 15, 9, 0),
+      endTime: new Date(2024, 0, 15, 10, 30),
+      isRecurring: false,
+      status: 'confirmed',
+      createdAt: new Date(),
+    },
+    {
+      id: '2',
+      roomId: '2',
+      userId: 'user2',
+      userEmail: 'marketing.sarah@company.com',
+      title: 'Campaign Review',
+      startTime: new Date(2024, 0, 15, 11, 0),
+      endTime: new Date(2024, 0, 15, 12, 0),
+      isRecurring: false,
+      status: 'confirmed',
+      createdAt: new Date(),
+    },
+    {
+      id: '3',
+      roomId: '3',
+      userId: 'user3',
+      userEmail: 'sales.mike@company.com',
+      title: 'Client Presentation',
+      startTime: new Date(2024, 0, 15, 14, 0),
+      endTime: new Date(2024, 0, 15, 15, 30),
+      isRecurring: false,
+      status: 'confirmed',
+      createdAt: new Date(),
+    },
+    {
+      id: '4',
+      roomId: '4',
+      userId: 'user4',
+      userEmail: 'hr.lisa@company.com',
+      title: 'All Hands Meeting',
+      startTime: new Date(2024, 0, 16, 10, 0),
+      endTime: new Date(2024, 0, 16, 11, 0),
+      isRecurring: true,
+      status: 'confirmed',
+      createdAt: new Date(),
+    },
+    {
+      id: '5',
+      roomId: '1',
+      userId: 'user5',
+      userEmail: 'finance.david@company.com',
+      title: 'Budget Review',
+      startTime: new Date(2024, 0, 16, 15, 0),
+      endTime: new Date(2024, 0, 16, 16, 30),
+      isRecurring: false,
+      status: 'confirmed',
+      createdAt: new Date(),
+    },
+  ];
 
   const adminStats = {
     totalBookings: 24,
@@ -250,6 +315,14 @@ const Index = () => {
               onEndEarly={handleEndEarly}
             />
           </div>
+        );
+
+      case 'calendar':
+        return (
+          <CalendarView
+            rooms={rooms}
+            bookings={mockBookings}
+          />
         );
 
       case 'admin':
