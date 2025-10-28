@@ -1,25 +1,29 @@
-import { Calendar, Clock, MapPin, Users, Wifi, Monitor, Coffee } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Wifi, Monitor, Coffee, Presentation, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Room } from "@/types/room";
+import type { RoomWithAvailability } from "@/types/room";
 
 interface RoomCardProps {
-  room: Room;
-  isAvailable?: boolean;
-  nextAvailable?: string;
+  room: RoomWithAvailability;
   onBook: (roomId: string) => void;
+  showAvailability?: boolean;
 }
 
-const amenityIcons: Record<string, any> = {
+const equipmentIcons: Record<string, any> = {
   'WiFi': Wifi,
   'Projector': Monitor,
   'Coffee': Coffee,
-  'Whiteboard': Monitor,
-  'Video Call': Monitor,
+  'Whiteboard': Presentation,
+  'Video Call': Phone,
+  'TV': Monitor,
+  'Conference Phone': Phone,
 };
 
-export const RoomCard = ({ room, isAvailable = true, nextAvailable, onBook }: RoomCardProps) => {
+export const RoomCard = ({ room, onBook, showAvailability = true }: RoomCardProps) => {
+  const isAvailable = room.is_available ?? true;
+  const nextAvailable = room.next_available_time;
+
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in bg-gradient-card border-0">
       <CardHeader className="pb-3">
@@ -33,39 +37,41 @@ export const RoomCard = ({ room, isAvailable = true, nextAvailable, onBook }: Ro
               </div>
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
-                <span>Floor {room.floor}</span>
+                <span>{room.location} - Floor {room.floor}</span>
               </div>
             </div>
           </div>
-          <Badge 
-            variant={isAvailable ? "default" : "secondary"}
-            className={`
-              ${isAvailable 
-                ? "bg-available text-white hover:bg-available/90" 
-                : "bg-occupied text-white"
-              }
-            `}
-          >
-            {isAvailable ? "Available" : "Occupied"}
-          </Badge>
+          {showAvailability && (
+            <Badge
+              variant={isAvailable ? "default" : "secondary"}
+              className={`
+                ${isAvailable
+                  ? "bg-green-500 text-white hover:bg-green-600"
+                  : "bg-red-500 text-white hover:bg-red-600"
+                }
+              `}
+            >
+              {isAvailable ? "Available" : "Occupied"}
+            </Badge>
+          )}
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {room.description && (
           <p className="text-sm text-muted-foreground">{room.description}</p>
         )}
-        
+
         <div className="flex flex-wrap gap-2">
-          {room.amenities.map((amenity) => {
-            const Icon = amenityIcons[amenity] || Monitor;
+          {room.equipment?.map((equipment) => {
+            const Icon = equipmentIcons[equipment] || Monitor;
             return (
-              <div 
-                key={amenity} 
+              <div
+                key={equipment}
                 className="flex items-center gap-1 text-xs bg-secondary px-2 py-1 rounded-md"
               >
                 <Icon className="h-3 w-3" />
-                <span>{amenity}</span>
+                <span>{equipment}</span>
               </div>
             );
           })}
@@ -78,13 +84,13 @@ export const RoomCard = ({ room, isAvailable = true, nextAvailable, onBook }: Ro
           </div>
         )}
 
-        <Button 
+        <Button
           onClick={() => onBook(room.id)}
           disabled={!isAvailable}
           className={`
             w-full transition-all duration-200 
-            ${isAvailable 
-              ? "bg-gradient-primary hover:shadow-lg hover:scale-105 transform" 
+            ${isAvailable
+              ? "bg-gradient-primary hover:shadow-lg hover:scale-105 transform"
               : "opacity-50 cursor-not-allowed"
             }
           `}
