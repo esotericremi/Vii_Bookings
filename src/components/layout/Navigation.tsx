@@ -34,6 +34,12 @@ const navItems: NavItem[] = [
         roles: ['staff', 'admin']
     },
     {
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: BarChart3,
+        roles: ['staff', 'admin']
+    },
+    {
         id: 'bookings',
         label: 'My Bookings',
         icon: Calendar,
