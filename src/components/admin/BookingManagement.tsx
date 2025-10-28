@@ -55,16 +55,16 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
     const [editingBooking, setEditingBooking] = useState<BookingWithRelations | null>(null);
     const [showEditDialog, setShowEditDialog] = useState(false);
     const [showReassignDialog, setShowReassignDialog] = useState(false);
-    const [reassignTarget, setReassignTarget] = useState<{ bookingId: string; newRoomId: string } | null>(null);
-    const [filters, setFilters] = useState<BookingFilters>({
-        search: '',
-        status: 'all',
-        room: 'all',
-        user: 'all',
-        dateRange: 'all',
-        sortBy: 'start_time',
-        sortOrder: 'desc'
-    });
+    const [reassignTarget, setReassignTarget] = useState<{ bookingId: string; newRoomId: string } | null>(null); const
+        [filters, setFilters] = useState<BookingFilters>({
+            search: '',
+            status: 'all',
+            room: 'all',
+            user: 'all',
+            dateRange: 'all',
+            sortBy: 'start_time',
+            sortOrder: 'desc'
+        });
 
     const adminUpdateBookingMutation = useAdminUpdateBooking();
     const adminCancelBookingMutation = useAdminCancelBooking();
@@ -109,7 +109,6 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
     }), [filters, dateRange]);
 
     const { data: allBookings = [], isLoading, refetch } = useBookings(bookingQueryFilters);
-
     // Filter and sort bookings
     const filteredBookings = useMemo(() => {
         let filtered = allBookings.filter(booking => {
@@ -177,8 +176,8 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
         if (isBefore(bookingEnd, now)) return { status: 'completed', color: 'outline' };
         if (isAfter(bookingStart, now)) return { status: 'upcoming', color: 'default' };
         return { status: 'ongoing', color: 'secondary' };
-    };    /
-        / Handle booking actions
+    };
+    // Handle booking actions
     const handleEditBooking = (booking: BookingWithRelations) => {
         setEditingBooking(booking);
         setShowEditDialog(true);
@@ -186,9 +185,6 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
 
     const handleCancelBooking = async (bookingId: string, reason?: string) => {
         try {
-            const booking = allBookings.find(b => b.id === bookingId);
-            if (!booking) return;
-
             await adminCancelBookingMutation.mutateAsync({
                 bookingId,
                 adminName: userProfile?.full_name || 'Administrator',
@@ -253,7 +249,6 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
             console.error('Admin override error:', error);
         }
     };
-
     // Handle selection
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
@@ -280,8 +275,9 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
         const adminOverrides = filteredBookings.filter(b => b.is_admin_override).length;
 
         return { total, confirmed, cancelled, pending, adminOverrides };
-    }, [filteredBookings]); if (i
-sLoading) {
+    }, [filteredBookings]);
+
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
                 <LoadingSpinner className="h-8 w-8" />
@@ -335,7 +331,6 @@ sLoading) {
                     )}
                 </div>
             </div>
-
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <Card>
@@ -449,7 +444,6 @@ sLoading) {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Rooms</SelectItem>
-                                {/* Room options would be populated from rooms data */}
                             </SelectContent>
                         </Select>
 
@@ -482,7 +476,6 @@ sLoading) {
                     </div>
                 </CardContent>
             </Card>
-
             {/* Bookings Table */}
             <Card>
                 <CardHeader>
@@ -539,285 +532,281 @@ sLoading) {
                                                 <TableCell>
                                                     <div>
                                                         <div className="font-medium">{booking.title}</div>
-                                                        {book ></Card           ntent>
-                                                </CardCo         
-    iv>  </d            >
-                                            / Table<ody>
-    bleB        </Ta              }
-                            )                     )
-         }                       );
-                                    >
-                            TableRow         </                          >
-                        /TableCell   <                                           enu>
-                            nMow/Dropd     <
-                                tent>enuConownM    </Dropd                                                   nuItem>
-                            ropdownMe         </D                                               oking
-    cel Bo       Can                                                      " />
-                        h-4 w-4 mr-2e="2 classNam  <Trash                                                              >
-                                                      
-      tive"truce="text-desassNam    cl                                                           )}
- ator'tr by adminisancelled 'Cd,g.iking(bookinncelBoo> handleCaick={() = onCl                                                       
-         m uIteownMen   <Dropd r />
-                            MenuSeparatoDropdown       <                                                     nMenuItem>
-                            </Dropdow                                                       oom
-   gn R   Reassi                                                      >
-                            / w-4 mr-2"me="h-4rs classNa   <Use                                                     >
+                                                        {booking.description && (
+                                                            <div className="text-sm text-muted-foreground truncate max-w-xs">
+                                                                {booking.description}
+                                                            </div>
+                                                        )}
+                                                        {booking.is_admin_override && (
+                                                            <Badge variant="outline" className="mt-1 text-xs">
+                                                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                                                Admin Override
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                                                        <div>
+                                                            <div className="font-medium">{booking.room?.name}</div>
+                                                            <div className="text-sm text-muted-foreground">
+                                                                {booking.room?.location} • Floor {booking.room?.floor}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <User className="h-4 w-4 text-muted-foreground" />
+                                                        <div>
+                                                            <div className="font-medium">{booking.user?.full_name}</div>
+                                                            <div className="text-sm text-muted-foreground">
+                                                                {booking.user?.email}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div>
+                                                        <div className="font-medium">
+                                                            {format(new Date(booking.start_time), 'MMM dd, yyyy')}
+                                                        </div>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            {format(new Date(booking.start_time), 'h:mm a')} - {format(new Date(booking.end_time), 'h:mm a')}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant={statusInfo.color as any}>
+                                                        {statusInfo.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {format(new Date(booking.created_at), 'MMM dd, h:mm a')}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                            <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
+                                                                <Edit className="h-4 w-4 mr-2" />
+                                                                Edit Booking
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
+                                                                    setReassignTarget({ bookingId: booking.id, newRoomId: '' });
+                                                                    setShowReassignDialog(true);
                                                                 }}
-                                true);
-    ssignDialog( setShowRea                                                               ' });
-                                Id: 'oomd, newR booking.i{bookingId:Target(ssignea        setR                                                    {
-                                    () => Click = {
-                                        on                                                           m 
- pdownMenuItero<D                                                         tem>
-ropdownMenuI  </D                                                         ooking
- dit B  E                                                          " />
-                            -2 w-4 mr="h-4lassName     <Edit c                                                           )}>
-g(bookingtBookin=> handleEdiClick={() MenuItem onDropdown  <
-                                abel>uLopdownMenDrons</nuLabel>ActipdownMe    <Dro                                                  >
-                                "end"ign=ontent alnMenuC  <Dropdow
-                                    MenuTrigger>down  </Drop
-                                >on </Butt                                                            />
-                            "h-4 w-4"sName=ontal clasHoriz   <More on">
-                            ="ichost" sizeariant="gutton v        <B                                                   >
-                                er asChildwnMenuTriggropdo   <D                                              >
-                                    ropdownMenu          <D l>
-                                        ableCel   <T
-                                            ll>leCe       </Tab                                      >
-                                    </div                                                }
-                                    m a') dd, h:mt), 'MMMed_aeatbooking.crw Date(  {format(ne                                                     und">
- uted - foregroxt - sm text - mame= "te classN     <div                                         l>
-      leCel<Tab leCell>
-                                    </Tab                                 
-           </Badge>                                            }
-                                fo.statusIn  {status                                                     
- s any}>Info.color atatusariant={s < Badge v                                            
-       Cell>      <Table
-                                    ell>eC     </Tabl                                    
-       /div>   <                                             v>
-                                    /di    <                                              
-      :mm a')}me), 'hoking.end_tite(bot(new Da')} - {formame), 'h:mm at_tig.starookinte(bw Da{format(ne >
-                                        "d-foregroundext-mutext-sm t="telassNamev cdi <                                                 </div>
-                                                       yyy')}
-                                dd, yme), 'MMM start_tiing.e(book Datormat(new          {f                                               ium">
-                                medName="font-<div class                                                        <div>
-                                                    eCell>
-                                    <Tabl l>
-                                    </TableCel                                                 </div>
-                                          >
-                            </div                                                    </div>
-                                                         ?.email}
-                    booking.user  {round">
-                    egxt-muted-forte"text-sm ame=sN  <div clas                                                         </div>
- _name}r?.fullng.usem">{bookifont - mediu"assName=cl<div
-                    div>           <                                         >
-                        reground" /uted-foxt-m"h-4 w-4 teclassName=r      <Use gap-2">
-                        center ms-te="flex iamelassN   <div c leCell>
-                            <Tab Cell>
-                                leab     </T                                   v>
-                        </di                                           
-  iv> </d                                                      /div>
-                    <                                                }
-                    m?.floorbooking.roo • Floor {?.location}ng.room    {booki                                                         ">
-                    oregroundext-muted-f"text-sm tassName=iv cl          <d div>
-     oom?.name}</{booking.redium">-m"fonte=sNam  <div clas                                                        <div>
-                                                        und" />
-                        uted-foregrotext-m-4 Name="h-4 wlassMapPin c      <                                              
-    2">er gap- items-centame="flexssNiv cla      <d Cell>
-                            <Table
-                                eCell>/Tabl      <                                      v>
-                                </di                                                  
-    )}                                              ge>
-                            </Bad                                                   e
-                            erriddmin Ov A                                                           
-    3 mr-1" />me="h-3 w-gle classNartTrianAle           <                                                     text-xs">
-                            ame="mt-1 ssN" clae"outlinge variant=      <Bad                                                & (
-                            rride &n_oves_admi {booking.i}
-                            )                                                       </div>
-                                                         iption}
-                    g.descr    {bookin - xs">
-                    e max-wncatound truforegrd-t-mutesm texme="text-sNa clas     <div                                              (
-                    cription && ing.des
-                    {/* Edit Booking Dialog */}
-                    {editingBooking && (
-                        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-                            <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                    <DialogTitle>Edit Booking - {editingBooking.title}</DialogTitle>
-                                </DialogHeader>
-                                <AdminBookingEditForm
-                                    booking={editingBooking}
-                                    onSave={handleAdminOverride}
-                                    onCancel={() => {
-                                        setEditingBooking(null);
-                                        setShowEditDialog(false);
-                                    }}
-                                />
-                            </DialogContent>
-                        </Dialog>
-                    )}
+                                                            >
+                                                                <Users className="h-4 w-4 mr-2" />
+                                                                Reassign Room
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleCancelBooking(booking.id, 'Cancelled by administrator')}
+                                                                className="text-destructive"
+                                                            >
+                                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                                Cancel Booking
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+            {/* Edit Booking Dialog */}
+            {editingBooking && (
+                <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+                    <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Edit Booking - {editingBooking.title}</DialogTitle>
+                        </DialogHeader>
+                        <AdminBookingEditForm
+                            booking={editingBooking}
+                            onSave={handleAdminOverride}
+                            onCancel={() => {
+                                setEditingBooking(null);
+                                setShowEditDialog(false);
+                            }}
+                        />
+                    </DialogContent>
+                </Dialog>
+            )}
 
-                    {/* Reassign Room Dialog */}
-                    <Dialog open={showReassignDialog} onOpenChange={setShowReassignDialog}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Reassign Room</DialogTitle>
-                            </DialogHeader>
-                            <RoomReassignForm
-                                bookingId={reassignTarget?.bookingId || ''}
-                                currentRoomId={allBookings.find(b => b.id === reassignTarget?.bookingId)?.room_id || ''}
-                                onReassign={handleReassignBooking}
-                                onCancel={() => {
-                                    setReassignTarget(null);
-                                    setShowReassignDialog(false);
-                                }}
-                            />
-                        </DialogContent>
-                    </Dialog>
-                </div>
-                );
+            {/* Reassign Room Dialog */}
+            <Dialog open={showReassignDialog} onOpenChange={setShowReassignDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reassign Room</DialogTitle>
+                    </DialogHeader>
+                    <RoomReassignForm
+                        bookingId={reassignTarget?.bookingId || ''}
+                        currentRoomId={allBookings.find(b => b.id === reassignTarget?.bookingId)?.room_id || ''}
+                        onReassign={handleReassignBooking}
+                        onCancel={() => {
+                            setReassignTarget(null);
+                            setShowReassignDialog(false);
+                        }}
+                    />
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 };
 
-                // Admin Booking Edit Form Component
-                interface AdminBookingEditFormProps {
-                    booking: BookingWithRelations;
-                onSave: (bookingId: string, updates: Partial<BookingWithRelations>) => void;
+// Admin Booking Edit Form Component
+interface AdminBookingEditFormProps {
+    booking: BookingWithRelations;
+    onSave: (bookingId: string, updates: Partial<BookingWithRelations>) => void;
     onCancel: () => void;
 }
 
-                    const AdminBookingEditForm: React.FC<AdminBookingEditFormProps> = ({booking, onSave, onCancel}) => {
+const AdminBookingEditForm: React.FC<AdminBookingEditFormProps> = ({ booking, onSave, onCancel }) => {
     const [formData, setFormData] = useState({
-                            title: booking.title,
-                        description: booking.description || '',
-                        start_time: format(new Date(booking.start_time), "yyyy-MM-dd'T'HH:mm"),
-                        end_time: format(new Date(booking.end_time), "yyyy-MM-dd'T'HH:mm"),
-                        status: booking.status
+        title: booking.title,
+        description: booking.description || '',
+        start_time: format(new Date(booking.start_time), "yyyy-MM-dd'T'HH:mm"),
+        end_time: format(new Date(booking.end_time), "yyyy-MM-dd'T'HH:mm"),
+        status: booking.status
     });
 
     const handleSubmit = (e: React.FormEvent) => {
-                            e.preventDefault();
+        e.preventDefault();
 
-                        const updates = {
-                            title: formData.title,
-                        description: formData.description || null,
-                        start_time: new Date(formData.start_time).toISOString(),
-                        end_time: new Date(formData.end_time).toISOString(),
-                        status: formData.status as any
+        const updates = {
+            title: formData.title,
+            description: formData.description || null,
+            start_time: new Date(formData.start_time).toISOString(),
+            end_time: new Date(formData.end_time).toISOString(),
+            status: formData.status as any
         };
 
-                        onSave(booking.id, updates);
+        onSave(booking.id, updates);
     };
 
-                        return (
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Title</label>
-                                <Input
-                                    value={formData.title}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                                    required
-                                />
-                            </div>
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium mb-2">Title</label>
+                <Input
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    required
+                />
+            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Description</label>
-                                <Input
-                                    value={formData.description}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                />
-                            </div>
+            <div>
+                <label className="block text-sm font-medium mb-2">Description</label>
+                <Input
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                />
+            </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">Start Time</label>
-                                    <Input
-                                        type="datetime-local"
-                                        value={formData.start_time}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">End Time</label>
-                                    <Input
-                                        type="datetime-local"
-                                        value={formData.end_time}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
-                                        required
-                                    />
-                                </div>
-                            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium mb-2">Start Time</label>
+                    <Input
+                        type="datetime-local"
+                        value={formData.start_time}
+                        onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-2">End Time</label>
+                    <Input
+                        type="datetime-local"
+                        value={formData.end_time}
+                        onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
+                        required
+                    />
+                </div>
+            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium mb-2">Status</label>
-                                <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                                        <SelectItem value="pending">Pending</SelectItem>
-                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+            <div>
+                <label className="block text-sm font-medium mb-2">Status</label>
+                <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}>
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
 
-                            <div className="flex justify-end gap-2 pt-4">
-                                <Button type="button" variant="outline" onClick={onCancel}>
-                                    Cancel
-                                </Button>
-                                <Button type="submit">
-                                    Save Changes
-                                </Button>
-                            </div>
-                        </form>
-                        );
+            <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                    Cancel
+                </Button>
+                <Button type="submit">
+                    Save Changes
+                </Button>
+            </div>
+        </form>
+    );
 };
 
-                        // Room Reassign Form Component
-                        interface RoomReassignFormProps {
-                            bookingId: string;
-                        currentRoomId: string;
+// Room Reassign Form Component
+interface RoomReassignFormProps {
+    bookingId: string;
+    currentRoomId: string;
     onReassign: (bookingId: string, newRoomId: string) => void;
     onCancel: () => void;
 }
 
-                        const RoomReassignForm: React.FC<RoomReassignFormProps> = ({bookingId, currentRoomId, onReassign, onCancel}) => {
+const RoomReassignForm: React.FC<RoomReassignFormProps> = ({ bookingId, currentRoomId, onReassign, onCancel }) => {
     const [selectedRoomId, setSelectedRoomId] = useState('');
-    // In a real implementation, you would fetch available rooms here
-    // const {data: rooms = [] } = useRooms();
 
     const handleSubmit = (e: React.FormEvent) => {
-                                e.preventDefault();
-                            if (selectedRoomId && selectedRoomId !== currentRoomId) {
-                                onReassign(bookingId, selectedRoomId);
+        e.preventDefault();
+        if (selectedRoomId && selectedRoomId !== currentRoomId) {
+            onReassign(bookingId, selectedRoomId);
         }
     };
 
-                            return (
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-2">Select New Room</label>
-                                    <Select value={selectedRoomId} onValueChange={setSelectedRoomId}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Choose a room..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {/* Room options would be populated from rooms data */}
-                                            <SelectItem value="room-1">Conference Room A</SelectItem>
-                                            <SelectItem value="room-2">Conference Room B</SelectItem>
-                                            <SelectItem value="room-3">Meeting Room 1</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium mb-2">Select New Room</label>
+                <Select value={selectedRoomId} onValueChange={setSelectedRoomId}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Choose a room..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="room-1">Conference Room A</SelectItem>
+                        <SelectItem value="room-2">Conference Room B</SelectItem>
+                        <SelectItem value="room-3">Meeting Room 1</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
 
-                                <div className="flex justify-end gap-2 pt-4">
-                                    <Button type="button" variant="outline" onClick={onCancel}>
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit" disabled={!selectedRoomId || selectedRoomId === currentRoomId}>
-                                        Reassign Room
-                                    </Button>
-                                </div>
-                            </form>
-                            );
+            <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                    Cancel
+                </Button>
+                <Button type="submit" disabled={!selectedRoomId || selectedRoomId === currentRoomId}>
+                    Reassign Room
+                </Button>
+            </div>
+        </form>
+    );
 };
