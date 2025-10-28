@@ -1,36 +1,49 @@
-export interface Room {
-  id: string;
+import { Tables } from './database';
+
+// Core room types from database
+export type Room = Tables<'rooms'>;
+export type RoomInsert = Tables<'rooms'>['Insert'];
+export type RoomUpdate = Tables<'rooms'>['Update'];
+
+// Extended room interface with computed properties
+export interface RoomWithAvailability extends Room {
+  is_available?: boolean;
+  current_booking?: Booking;
+  next_available_time?: string;
+}
+
+// Room form data interface
+export interface RoomFormData {
   name: string;
   capacity: number;
-  floor: number;
-  amenities: string[];
+  location: string;
+  floor: string;
+  equipment?: string[];
   description?: string;
-  image?: string;
+  image_url?: string;
+  is_active?: boolean;
 }
 
-export interface Booking {
-  id: string;
-  roomId: string;
-  userId: string;
-  userEmail: string;
-  title: string;
-  startTime: Date;
-  endTime: Date;
-  isRecurring: boolean;
-  status: 'confirmed' | 'pending' | 'checked-in' | 'cancelled';
-  checkedInAt?: Date;
-  createdAt: Date;
+// Room filter interface
+export interface RoomFilter {
+  capacity_min?: number;
+  capacity_max?: number;
+  floor?: string;
+  equipment?: string[];
+  location?: string;
+  search?: string;
+  is_active?: boolean;
 }
 
-export interface TimeSlot {
-  start: string;
-  end: string;
-  available: boolean;
-  booking?: Booking;
+// Room utilization interface
+export interface RoomUtilization {
+  room_id: string;
+  room_name: string;
+  total_hours_booked: number;
+  total_hours_available: number;
+  utilization_percentage: number;
+  booking_count: number;
 }
 
-export interface RoomAvailability {
-  roomId: string;
-  date: string;
-  slots: TimeSlot[];
-}
+// Import types for relations
+import type { Booking } from './booking';
