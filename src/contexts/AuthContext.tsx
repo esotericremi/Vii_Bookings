@@ -4,6 +4,7 @@ import { supabase, getUserProfile } from '@/lib/supabase';
 import { Database } from '@/types/database';
 
 type UserProfile = Database['public']['Tables']['users']['Row'];
+type UserInsert = Database['public']['Tables']['users']['Insert'];
 
 interface AuthContextType {
     user: User | null;
@@ -11,7 +12,7 @@ interface AuthContextType {
     session: Session | null;
     loading: boolean;
     signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-    signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>;
+    signUp: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null; needsEmailConfirmation?: boolean }>;
     signOut: () => Promise<{ error: AuthError | null }>;
     resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
 }
@@ -104,13 +105,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // If signup is successful, create user profile
         if (data.user && !error) {
-            const { error: profileError } = await supabase
+            const { error: profileError } = await (supabase as any)
                 .from('users')
                 .insert({
                     id: data.user.id,
                     email: data.user.email!,
                     full_name: fullName,
-                    role: 'staff', // Default role
+                    role: 'staff',
                 });
 
             if (profileError) {
@@ -118,7 +119,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
         }
 
-        return { error };
+        return {
+            error,
+            needsEmailConfirmation: data.user && !data.session // If user exists but no session, email confirmation is required
+        };
     };
 
     const signOut = async () => {

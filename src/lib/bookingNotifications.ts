@@ -83,6 +83,49 @@ export class BookingNotificationService {
     }
 
     /**
+     * Create notification for room reassignment by admin
+     */
+    static async notifyRoomReassignment(
+        booking: BookingWithRelations,
+        oldRoomName: string,
+        newRoomName: string,
+        adminName: string,
+        reason?: string
+    ) {
+        if (!booking.user_id) return;
+
+        const dateTime = format(new Date(booking.start_time), "MMM dd, yyyy 'at' h:mm a");
+        const message = reason
+            ? `Your booking "${booking.title}" on ${dateTime} has been moved from ${oldRoomName} to ${newRoomName} by ${adminName}. Reason: ${reason}`
+            : `Your booking "${booking.title}" on ${dateTime} has been moved from ${oldRoomName} to ${newRoomName} by ${adminName}.`;
+
+        await notificationQueries.create({
+            user_id: booking.user_id,
+            title: 'Booking Room Changed',
+            message,
+            type: 'admin_override'
+        });
+    }
+
+    /**
+     * Create notification for bulk booking cancellation by admin
+     */
+    static async notifyBulkCancellation(userIds: string[], adminName: string, reason?: string) {
+        const message = reason
+            ? `Some of your bookings have been cancelled by ${adminName}. Reason: ${reason}`
+            : `Some of your bookings have been cancelled by ${adminName}.`;
+
+        const notifications = userIds.map(userId => ({
+            user_id: userId,
+            title: 'Bookings Cancelled by Admin',
+            message,
+            type: 'admin_override' as const
+        }));
+
+        await notificationQueries.createBulk(notifications);
+    }
+
+    /**
      * Create reminder notification for upcoming booking
      */
     static async notifyBookingReminder(booking: BookingWithRelations, minutesBefore: number) {

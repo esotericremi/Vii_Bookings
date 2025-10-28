@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, HelpCircle } from 'lucide-react';
+import { TroubleshootingHelp } from '@/components/auth/TroubleshootingHelp';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export const Login: React.FC = () => {
     const { signIn, user, loading } = useAuth();
@@ -61,7 +63,25 @@ export const Login: React.FC = () => {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {error && (
                             <Alert variant="destructive">
-                                <AlertDescription>{error}</AlertDescription>
+                                <AlertDescription className="flex items-center justify-between">
+                                    <span>{error}</span>
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-auto p-1">
+                                                <HelpCircle className="h-4 w-4" />
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                            <DialogHeader>
+                                                <DialogTitle>Authentication Help</DialogTitle>
+                                                <DialogDescription>
+                                                    Let's help you resolve this login issue.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <TroubleshootingHelp error={error} />
+                                        </DialogContent>
+                                    </Dialog>
+                                </AlertDescription>
                             </Alert>
                         )}
 

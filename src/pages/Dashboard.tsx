@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { format, addDays, startOfWeek, isSameDay, startOfDay, endOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { Layout } from '@/components/layout/Layout';
 import { BookingForm } from '@/components/BookingForm';
+import { AdminNavigation } from '@/components/admin/AdminNavigation';
 import { useRoomsWithAvailability } from '@/hooks/useRooms';
 import { useBookings } from '@/hooks/useBookings';
 import { useAuth } from '@/hooks/useAuth';
@@ -393,12 +394,22 @@ const Dashboard: React.FC = () => {
     return (
         <Layout activeView="dashboard">
             <div className="space-y-6">
+                {/* Admin Navigation - Show only for admin users */}
+                {userProfile?.role === 'admin' && (
+                    <AdminNavigation />
+                )}
+
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold">Staff Dashboard</h1>
+                        <h1 className="text-3xl font-bold">
+                            {userProfile?.role === 'admin' ? 'Admin Dashboard' : 'Staff Dashboard'}
+                        </h1>
                         <p className="text-muted-foreground">
-                            View room availability and book meeting spaces
+                            {userProfile?.role === 'admin'
+                                ? 'Manage rooms, bookings, and system settings'
+                                : 'View room availability and book meeting spaces'
+                            }
                         </p>
                     </div>
 

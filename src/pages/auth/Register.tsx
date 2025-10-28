@@ -22,6 +22,7 @@ export const Register: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
 
     // Redirect if already authenticated
     if (user && !loading) {
@@ -54,12 +55,13 @@ export const Register: React.FC = () => {
             return;
         }
 
-        const { error } = await signUp(formData.email, formData.password, formData.fullName);
+        const { error, needsEmailConfirmation } = await signUp(formData.email, formData.password, formData.fullName);
 
         if (error) {
             setError(error.message);
         } else {
             setSuccess(true);
+            setNeedsEmailConfirmation(needsEmailConfirmation || false);
         }
 
         setIsLoading(false);
@@ -82,7 +84,10 @@ export const Register: React.FC = () => {
                             Registration Successful!
                         </CardTitle>
                         <CardDescription className="text-center">
-                            Please check your email to verify your account before signing in.
+                            {needsEmailConfirmation
+                                ? "Please check your email to verify your account before signing in."
+                                : "Your account has been created successfully. You can now sign in."
+                            }
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

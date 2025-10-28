@@ -11,6 +11,7 @@ export type NotificationType =
     | 'booking_cancelled'
     | 'booking_modified'
     | 'admin_override'
+    | 'booking_reminder'
     | 'system_error';
 
 // Notification with user relation
