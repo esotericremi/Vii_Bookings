@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import { RoomSelection } from "./pages/RoomSelection";
 import { Login } from "./pages/auth/Login";
 import { Register } from "./pages/auth/Register";
 import { Unauthorized } from "./pages/auth/Unauthorized";
@@ -32,6 +33,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Index />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/rooms"
+              element={
+                <ProtectedRoute>
+                  <RoomSelection />
                 </ProtectedRoute>
               }
             />

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, Filter, Plus } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { RoomCard } from "@/components/RoomCard";
@@ -15,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Room, Booking } from "@/types/room";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [activeView, setActiveView] = useState('rooms');
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -149,11 +151,11 @@ const Index = () => {
 
   const filteredRooms = rooms.filter(room => {
     const matchesSearch = room.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCapacity = capacityFilter === 'all' || 
+    const matchesCapacity = capacityFilter === 'all' ||
       (capacityFilter === 'small' && room.capacity <= 6) ||
       (capacityFilter === 'medium' && room.capacity > 6 && room.capacity <= 12) ||
       (capacityFilter === 'large' && room.capacity > 12);
-    
+
     return matchesSearch && matchesCapacity;
   });
 
@@ -207,8 +209,15 @@ const Index = () => {
               <div>
                 <h2 className="text-2xl font-bold">Find Your Perfect Room</h2>
                 <p className="text-muted-foreground">Book a space that fits your team and needs</p>
+                <Button
+                  onClick={() => navigate('/rooms')}
+                  className="mt-4"
+                  size="lg"
+                >
+                  Go to Advanced Room Selection
+                </Button>
               </div>
-              
+
               <div className="flex gap-2 w-full sm:w-auto">
                 <div className="relative flex-1 sm:w-64">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -219,7 +228,7 @@ const Index = () => {
                     className="pl-10"
                   />
                 </div>
-                
+
                 <Select value={capacityFilter} onValueChange={setCapacityFilter}>
                   <SelectTrigger className="w-32">
                     <Filter className="h-4 w-4 mr-2" />
@@ -252,8 +261,8 @@ const Index = () => {
               <Card className="text-center py-12">
                 <CardContent>
                   <p className="text-muted-foreground">No rooms match your search criteria</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setSearchTerm('');
                       setCapacityFilter('all');
@@ -275,7 +284,7 @@ const Index = () => {
               <h2 className="text-2xl font-bold">My Bookings</h2>
               <p className="text-muted-foreground">Manage your upcoming meetings</p>
             </div>
-            
+
             <div className="grid gap-4">
               <Card>
                 <CardHeader>
@@ -307,7 +316,7 @@ const Index = () => {
               <h2 className="text-2xl font-bold">Check In to Your Meeting</h2>
               <p className="text-muted-foreground">Confirm your presence to keep your room</p>
             </div>
-            
+
             <CheckInInterface
               booking={mockBooking}
               onCheckIn={handleCheckIn}
@@ -346,7 +355,7 @@ const Index = () => {
         onViewChange={setActiveView}
         notificationCount={3}
       />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderContent()}
       </main>
