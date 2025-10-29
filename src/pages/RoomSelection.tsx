@@ -12,6 +12,8 @@ import { AvailabilityTimeline } from '@/components/booking/AvailabilityTimeline'
 import { Layout } from '@/components/layout/Layout';
 import { useRoomsWithAvailability, useRoomsRealtime } from '@/hooks/useRooms';
 import { useBookings, useBookingsRealtime } from '@/hooks/useBookings';
+import { useGlobalRoomAvailability } from '@/hooks/useRealTimeAvailability';
+import { CompactConnectionStatus } from '@/components/shared/ConnectionStatusIndicator';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
 import type { RoomFilter } from '@/types/room';
@@ -36,6 +38,20 @@ export const RoomSelection = () => {
 
     // Enable real-time updates for rooms
     useRoomsRealtime(filters);
+
+    // Enable global real-time room availability updates
+    const { connectionStatus, lastUpdate, availabilityUpdates } = useGlobalRoomAvailability({
+        onAvailabilityChange: (roomId, isAvailable, booking, room) => {
+            // Show toast notification for availability changes
+            if (booking) {
+                toast({
+                    title: isAvailable ? "Room Available" : "Room Booked",
+                    description: `${room?.name || 'A room'} is now ${isAvailable ? 'available' : 'unavailable'}.`,
+                    duration: 3000,
+                });
+            }
+        }
+    });
 
     // Get bookings for the selected date and room (for timeline view)
     const {
@@ -174,8 +190,11 @@ export const RoomSelection = () => {
                                     />
                                 </div>
 
-                                {/* View Mode Toggle */}
+                                {/* Controls */}
                                 <div className="flex items-center gap-2">
+                                    {/* Connection Status */}
+                                    <CompactConnectionStatus />
+
                                     {/* Refresh Button */}
                                     <Button
                                         variant="outline"
@@ -212,7 +231,7 @@ export const RoomSelection = () => {
                         </div>
 
                         <TabsContent value="rooms" className="space-y-6">
-                            {/* Results Summary */}
+                            {/* Results Summary with Real-time Info */}
                             <div className="flex items-center justify-between">
                                 <p className="text-sm text-muted-foreground">
                                     {roomsLoading ? (
@@ -224,6 +243,15 @@ export const RoomSelection = () => {
                                         `${filteredRooms.length} room${filteredRooms.length !== 1 ? 's' : ''} found`
                                     )}
                                 </p>
+                                {lastUpdate && connectionStatus === 'connected' && (
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                                        <span>Live updates active</span>
+                                        {availabilityUpdates.length > 0 && (
+                                            <span>• {availabilityUpdates.length} recent changes</span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Room Grid/List */}

@@ -34,6 +34,12 @@ export const Layout: React.FC<LayoutProps> = ({
                 case 'room-selection':
                     navigate('/rooms');
                     break;
+                case 'admin-bookings':
+                    navigate('/admin/bookings');
+                    break;
+                case 'admin-settings':
+                    navigate('/admin/settings');
+                    break;
                 default:
                     if (onViewChange) onViewChange(view);
             }

@@ -1,13 +1,16 @@
-import { Calendar, Clock, MapPin, Users, Wifi, Monitor, Coffee, Presentation, Phone } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Wifi, Monitor, Coffee, Presentation, Phone, WifiOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useRealTimeAvailability } from "@/hooks/useRealTimeAvailability";
+import { useRealTimeSync } from "@/components/shared/RealTimeSyncProvider";
 import type { RoomWithAvailability } from "@/types/room";
 
 interface RoomCardProps {
   room: RoomWithAvailability;
   onBook: (roomId: string) => void;
   showAvailability?: boolean;
+  enableRealTime?: boolean;
 }
 
 const equipmentIcons: Record<string, any> = {
@@ -20,9 +23,26 @@ const equipmentIcons: Record<string, any> = {
   'Conference Phone': Phone,
 };
 
-export const RoomCard = ({ room, onBook, showAvailability = true }: RoomCardProps) => {
+export const RoomCard = ({ room, onBook, showAvailability = true, enableRealTime = true }: RoomCardProps) => {
+  const { isConnected, lastUpdate } = useRealTimeAvailability({
+    roomId: enableRealTime ? room.id : null,
+    onAvailabilityChange: (roomId, isAvailable) => {
+      console.log(`Room ${roomId} availability changed to ${isAvailable}`);
+    }
+  });
+
+  // Enhanced real-time sync information
+  const { connectionStatus, syncUpdates } = useRealTimeSync();
+
+  // Check if this room has recent sync updates
+  const recentRoomUpdates = syncUpdates.filter(update =>
+    update.roomId === room.id &&
+    Date.now() - update.timestamp.getTime() < 30000 // Last 30 seconds
+  );
+
   const isAvailable = room.is_available ?? true;
   const nextAvailable = room.next_available_time;
+  const hasRecentUpdates = recentRoomUpdates.length > 0;
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in bg-gradient-card border-0">
@@ -41,19 +61,40 @@ export const RoomCard = ({ room, onBook, showAvailability = true }: RoomCardProp
               </div>
             </div>
           </div>
-          {showAvailability && (
-            <Badge
-              variant={isAvailable ? "default" : "secondary"}
-              className={`
-                ${isAvailable
-                  ? "bg-green-500 text-white hover:bg-green-600"
-                  : "bg-red-500 text-white hover:bg-red-600"
-                }
-              `}
-            >
-              {isAvailable ? "Available" : "Occupied"}
-            </Badge>
-          )}
+          <div className="flex flex-col items-end gap-2">
+            {showAvailability && (
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={isAvailable ? "default" : "secondary"}
+                  className={`
+                    ${isAvailable
+                      ? "bg-green-500 text-white hover:bg-green-600"
+                      : "bg-red-500 text-white hover:bg-red-600"
+                    }
+                    ${hasRecentUpdates ? "animate-pulse" : ""}
+                  `}
+                >
+                  {isAvailable ? "Available" : "Occupied"}
+                </Badge>
+                {hasRecentUpdates && (
+                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                    Live
+                  </Badge>
+                )}
+              </div>
+            )}
+            {enableRealTime && (
+              <div className="flex items-center gap-1">
+                <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                  }`} />
+                {lastUpdate && (
+                  <span className="text-xs text-muted-foreground">
+                    Updated {lastUpdate.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
 

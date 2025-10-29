@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Room } from "@/types/room";
 import { BookingFormData } from "@/types/booking";
 import { useBookingConflicts } from "@/hooks/useBookings";
+import { useEnhancedRealTimeConflictPrevention } from "@/hooks/useRealTimeAvailability";
 import { useAuth } from "@/hooks/useAuth";
 import { format, addMinutes, isAfter, addDays } from "date-fns";
 
@@ -104,14 +105,34 @@ export const BookingForm = ({ room, onSubmit, onCancel, isSubmitting = false, in
   const startDateTime = date && startTime ? `${date}T${startTime}:00` : "";
   const endDateTime = date && endTime ? `${date}T${endTime}:00` : "";
 
-  const { data: conflicts, isLoading: isCheckingConflicts } = useBookingConflicts(
+  // Enhanced real-time conflict prevention
+  const {
+    hasConflict: hasRealTimeConflict,
+    conflicts: realTimeConflicts,
+    isRealTimeConflict,
+    conflictSource,
+    isChecking: isCheckingRealTimeConflicts,
+    conflictHistory,
+    recentConflicts
+  } = useEnhancedRealTimeConflictPrevention(
     room.id,
     startDateTime,
     endDateTime,
     undefined
   );
 
-  const hasConflicts = conflicts && conflicts.length > 0;
+  // Fallback to regular conflict detection if enhanced is not available
+  const { data: fallbackConflicts, isLoading: isCheckingFallbackConflicts } = useBookingConflicts(
+    room.id,
+    startDateTime,
+    endDateTime,
+    undefined
+  );
+
+  // Use enhanced conflicts if available, otherwise fallback
+  const conflicts = realTimeConflicts.length > 0 ? realTimeConflicts : (fallbackConflicts || []);
+  const hasConflicts = hasRealTimeConflict || (fallbackConflicts && fallbackConflicts.length > 0);
+  const isCheckingConflicts = isCheckingRealTimeConflicts || isCheckingFallbackConflicts;
 
   // Enable conflict checking after initial render to avoid unnecessary API calls
   useEffect(() => {
@@ -211,21 +232,40 @@ export const BookingForm = ({ room, onSubmit, onCancel, isSubmitting = false, in
       <CardContent className="p-6 space-y-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-            {/* Conflict Detection Alert */}
+            {/* Enhanced Real-time Conflict Prevention Alert */}
             {conflictCheckEnabled && hasConflicts && (
-              <Alert className="border-destructive bg-destructive/10">
+              <Alert className={`border-destructive ${isRealTimeConflict ? 'bg-red-100 animate-pulse border-red-500' : 'bg-destructive/10'}`}>
                 <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="flex items-center justify-between">
-                  <span>This time slot conflicts with an existing booking.</span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={applyNextAvailableSlot}
-                    className="ml-2"
-                  >
-                    Find Next Available
-                  </Button>
+                <AlertDescription className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span>
+                      {isRealTimeConflict
+                        ? "⚡ Real-time conflict detected! Someone just booked this slot."
+                        : conflictSource === 'realtime'
+                          ? "🔄 Conflict detected through real-time monitoring."
+                          : "This time slot conflicts with an existing booking."
+                      }
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={applyNextAvailableSlot}
+                      className="ml-2"
+                    >
+                      Find Next Available
+                    </Button>
+                  </div>
+                  {isRealTimeConflict && (
+                    <div className="text-xs text-red-700 bg-red-50 p-2 rounded border border-red-200">
+                      💡 This conflict was detected in real-time. The booking form will prevent submission until resolved.
+                      {recentConflicts.length > 0 && (
+                        <div className="mt-1 text-xs text-red-600">
+                          Recent conflicts: {recentConflicts.filter(c => c.isRealTime).length} real-time, {recentConflicts.filter(c => !c.isRealTime).length} existing
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
             )}

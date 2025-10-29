@@ -21,5 +21,5 @@ export {
     NotificationToastHandler
 } from './NotificationToast';
 
-// Re-export LoadingSpinner from ui components
-export { LoadingSpinner } from '../ui/loading-spinner';
+// Loading component
+export { LoadingSpinner } from './LoadingSpinner';

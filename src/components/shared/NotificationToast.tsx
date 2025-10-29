@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -185,42 +186,118 @@ export const useBookingToasts = () => {
 };
 
 // Component for handling real-time notification toasts
-export const NotificationToastHandler: React.FC = () => {
+export const NotificationToastHandler: React.FC<{ userId?: string }> = ({ userId }) => {
     const bookingToasts = useBookingToasts();
 
-    // This would typically listen to real-time notifications
-    // and show appropriate toasts based on notification type
     useEffect(() => {
-        // Example: Listen to notification events and show toasts
-        const handleNotification = (notification: any) => {
-            switch (notification.type) {
-                case 'booking_confirmed':
-                    bookingToasts.showBookingConfirmed(
-                        notification.roomName,
-                        notification.startTime
-                    );
-                    break;
-                case 'booking_cancelled':
-                    bookingToasts.showBookingCancelled(notification.roomName);
-                    break;
-                case 'booking_modified':
-                    bookingToasts.showBookingModified(notification.roomName);
-                    break;
-                case 'admin_override':
-                    bookingToasts.showAdminOverride(notification.roomName);
-                    break;
-                default:
-                    showInfoToast(notification.title, notification.message);
-            }
-        };
+        if (!userId) return;
 
-        // In a real implementation, this would subscribe to real-time notifications
-        // For now, this is just a placeholder structure
+        // Subscribe to real-time notifications for toast display
+        const channel = supabase
+            .channel(`notification-toasts-${userId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications',
+                    filter: `user_id=eq.${userId}`,
+                },
+                (payload) => {
+                    const notification = payload.new as any;
+
+                    // Show toast based on notification type
+                    switch (notification.type) {
+                        case 'booking_confirmed':
+                            bookingToasts.showBookingConfirmed(
+                                notification.title,
+                                notification.message
+                            );
+                            break;
+                        case 'booking_cancelled':
+                            bookingToasts.showBookingCancelled(notification.title);
+                            break;
+                        case 'booking_modified':
+                            bookingToasts.showBookingModified(notification.title);
+                            break;
+                        case 'admin_override':
+                            bookingToasts.showAdminOverride(notification.title);
+                            break;
+                        case 'system_error':
+                            showErrorToast(notification.title, notification.message);
+                            break;
+                        default:
+                            showInfoToast(notification.title, notification.message);
+                    }
+                }
+            )
+            .subscribe();
 
         return () => {
-            // Cleanup subscription
+            supabase.removeChannel(channel);
         };
-    }, [bookingToasts]);
+    }, [userId, bookingToasts]);
 
     return null; // This component doesn't render anything
+};
+
+// Enhanced booking toasts with real-time conflict detection
+export const useEnhancedBookingToasts = () => {
+    const basicToasts = useBookingToasts();
+
+    const showRealTimeConflict = (roomName: string) => {
+        showErrorToast(
+            '⚡ Real-time Conflict Detected',
+            `Someone just booked ${roomName} for the selected time. Please choose a different slot.`,
+            {
+                duration: 8000,
+                action: {
+                    label: 'Find Alternative',
+                    onClick: () => {
+                        // This could trigger a callback to find next available slot
+                        console.log('Finding alternative slot...');
+                    }
+                }
+            }
+        );
+    };
+
+    const showAvailabilityUpdate = (roomName: string, isAvailable: boolean) => {
+        if (isAvailable) {
+            showSuccessToast(
+                '✅ Room Available',
+                `${roomName} is now available for booking.`,
+                { duration: 4000 }
+            );
+        } else {
+            showInfoToast(
+                '📅 Room Booked',
+                `${roomName} has been booked by another user.`,
+                { duration: 4000 }
+            );
+        }
+    };
+
+    const showConnectionStatus = (isConnected: boolean) => {
+        if (isConnected) {
+            showSuccessToast(
+                '🔗 Connected',
+                'Real-time updates are now active.',
+                { duration: 3000 }
+            );
+        } else {
+            showWarningToast(
+                '⚠️ Connection Lost',
+                'Real-time updates are temporarily unavailable.',
+                { duration: 5000 }
+            );
+        }
+    };
+
+    return {
+        ...basicToasts,
+        showRealTimeConflict,
+        showAvailabilityUpdate,
+        showConnectionStatus,
+    };
 };

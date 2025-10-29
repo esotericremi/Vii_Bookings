@@ -22,13 +22,20 @@ export const DEFAULT_SYSTEM_SETTINGS: Omit<SystemSettings, 'id' | 'created_at' |
     buffer_time_minutes: 0,
     company_name: 'Company',
     company_logo_url: null,
-    theme_color: '#3b82f6',
+    theme_color: '#3b82f6'
 };
 
-// Booking rules derived from settings
-export interface BookingRules {
-    max_duration_minutes: number;
-    min_advance_notice_hours: number;
-    buffer_time_minutes: number;
-    max_advance_booking_days?: number;
+// User role management types
+export interface UserRoleUpdate {
+    id: string;
+    role: 'staff' | 'admin';
+}
+
+export interface UserManagementData {
+    id: string;
+    email: string;
+    full_name: string;
+    role: 'staff' | 'admin';
+    department: string | null;
+    created_at: string;
 }

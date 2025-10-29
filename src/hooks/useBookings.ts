@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { bookingQueries } from '@/lib/queries';
+import { NotificationService } from '@/lib/notificationService';
+import { useAuth } from '@/hooks/useAuth';
 import type { BookingWithRelations, BookingFormData } from '@/types/booking';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -135,39 +137,189 @@ export const useCreateBooking = () => {
     return useMutation({
         mutationFn: (booking: BookingFormData & { user_id: string }) =>
             bookingQueries.create(booking),
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
+            // Invalidate queries
             queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
             queryClient.invalidateQueries({ queryKey: bookingKeys.user(data.user_id) });
             queryClient.invalidateQueries({ queryKey: bookingKeys.room(data.room_id) });
+
+            // Create notification for booking confirmation
+            try {
+                await NotificationService.createBookingConfirmedNotification(data);
+            } catch (error) {
+                console.error('Failed to create booking confirmation notification:', error);
+            }
         },
     });
 };
 
 export const useUpdateBooking = () => {
     const queryClient = useQueryClient();
+    const { userProfile } = useAuth();
 
     return useMutation({
-        mutationFn: ({ id, updates }: { id: string; updates: Partial<BookingWithRelations> }) =>
-            bookingQueries.update(id, updates),
-        onSuccess: (data) => {
+        mutationFn: async ({ id, updates }: { id: string; updates: Partial<BookingWithRelations> }) => {
+            // Get original booking for comparison
+            const originalBooking = await bookingQueries.getById(id);
+            const updatedBooking = await bookingQueries.update(id, updates);
+
+            return { originalBooking, updatedBooking };
+        },
+        onSuccess: async ({ originalBooking, updatedBooking }) => {
+            // Invalidate queries
             queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
-            queryClient.setQueryData(bookingKeys.detail(data.id), data);
-            queryClient.invalidateQueries({ queryKey: bookingKeys.user(data.user_id) });
-            queryClient.invalidateQueries({ queryKey: bookingKeys.room(data.room_id) });
+            queryClient.setQueryData(bookingKeys.detail(updatedBooking.id), updatedBooking);
+            queryClient.invalidateQueries({ queryKey: bookingKeys.user(updatedBooking.user_id) });
+            queryClient.invalidateQueries({ queryKey: bookingKeys.room(updatedBooking.room_id) });
+
+            // Create notification for booking modification
+            try {
+                await NotificationService.createBookingModifiedNotification(
+                    originalBooking,
+                    updatedBooking,
+                    userProfile?.id
+                );
+            } catch (error) {
+                console.error('Failed to create booking modification notification:', error);
+            }
         },
     });
 };
 
 export const useCancelBooking = () => {
     const queryClient = useQueryClient();
+    const { userProfile } = useAuth();
 
     return useMutation({
         mutationFn: bookingQueries.cancel,
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
+            // Invalidate queries
             queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
             queryClient.setQueryData(bookingKeys.detail(data.id), data);
             queryClient.invalidateQueries({ queryKey: bookingKeys.user(data.user_id) });
             queryClient.invalidateQueries({ queryKey: bookingKeys.room(data.room_id) });
+
+            // Create notification for booking cancellation
+            try {
+                await NotificationService.createBookingCancelledNotification(
+                    data,
+                    userProfile?.id
+                );
+            } catch (error) {
+                console.error('Failed to create booking cancellation notification:', error);
+            }
+        },
+    });
+};
+
+// Admin-specific hooks with notification support
+export const useAdminCreateBooking = () => {
+    const queryClient = useQueryClient();
+    const { userProfile } = useAuth();
+
+    return useMutation({
+        mutationFn: (booking: BookingFormData & { user_id: string }) =>
+            bookingQueries.create(booking),
+        onSuccess: async (data) => {
+            // Invalidate queries
+            queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: bookingKeys.user(data.user_id) });
+            queryClient.invalidateQueries({ queryKey: bookingKeys.room(data.room_id) });
+
+            // Create appropriate notification
+            try {
+                if (userProfile?.id === data.user_id) {
+                    // Admin creating booking for themselves
+                    await NotificationService.createBookingConfirmedNotification(data);
+                } else if (userProfile?.role === 'admin') {
+                    // Admin creating booking for another user
+                    await NotificationService.createAdminOverrideNotification(
+                        data,
+                        userProfile,
+                        'created'
+                    );
+                }
+            } catch (error) {
+                console.error('Failed to create admin booking notification:', error);
+            }
+        },
+    });
+};
+
+export const useAdminUpdateBooking = () => {
+    const queryClient = useQueryClient();
+    const { userProfile } = useAuth();
+
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string; updates: Partial<BookingWithRelations> }) => {
+            const originalBooking = await bookingQueries.getById(id);
+            const updatedBooking = await bookingQueries.update(id, updates);
+
+            return { originalBooking, updatedBooking };
+        },
+        onSuccess: async ({ originalBooking, updatedBooking }) => {
+            // Invalidate queries
+            queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
+            queryClient.setQueryData(bookingKeys.detail(updatedBooking.id), updatedBooking);
+            queryClient.invalidateQueries({ queryKey: bookingKeys.user(updatedBooking.user_id) });
+            queryClient.invalidateQueries({ queryKey: bookingKeys.room(updatedBooking.room_id) });
+
+            // Create appropriate notification
+            try {
+                if (userProfile?.id === updatedBooking.user_id) {
+                    // User updating their own booking
+                    await NotificationService.createBookingModifiedNotification(
+                        originalBooking,
+                        updatedBooking,
+                        userProfile.id
+                    );
+                } else if (userProfile?.role === 'admin') {
+                    // Admin updating another user's booking
+                    await NotificationService.createAdminOverrideNotification(
+                        updatedBooking,
+                        userProfile,
+                        'modified'
+                    );
+                }
+            } catch (error) {
+                console.error('Failed to create admin booking update notification:', error);
+            }
+        },
+    });
+};
+
+export const useAdminCancelBooking = () => {
+    const queryClient = useQueryClient();
+    const { userProfile } = useAuth();
+
+    return useMutation({
+        mutationFn: bookingQueries.cancel,
+        onSuccess: async (data) => {
+            // Invalidate queries
+            queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
+            queryClient.setQueryData(bookingKeys.detail(data.id), data);
+            queryClient.invalidateQueries({ queryKey: bookingKeys.user(data.user_id) });
+            queryClient.invalidateQueries({ queryKey: bookingKeys.room(data.room_id) });
+
+            // Create appropriate notification
+            try {
+                if (userProfile?.id === data.user_id) {
+                    // User cancelling their own booking
+                    await NotificationService.createBookingCancelledNotification(
+                        data,
+                        userProfile.id
+                    );
+                } else if (userProfile?.role === 'admin') {
+                    // Admin cancelling another user's booking
+                    await NotificationService.createAdminOverrideNotification(
+                        data,
+                        userProfile,
+                        'cancelled'
+                    );
+                }
+            } catch (error) {
+                console.error('Failed to create admin booking cancellation notification:', error);
+            }
         },
     });
 };

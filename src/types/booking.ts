@@ -56,6 +56,47 @@ export interface BookingAnalytics {
     popular_rooms: { room_id: string; room_name: string; booking_count: number }[];
 }
 
+// Room utilization analytics interface
+export interface RoomUtilizationData {
+    room_id: string;
+    room_name: string;
+    total_hours_booked: number;
+    booking_count: number;
+    total_hours_available: number;
+    utilization_percentage: number;
+}
+
+// Booking trends interface
+export interface BookingTrendData {
+    date: string;
+    confirmed: number;
+    cancelled: number;
+    total: number;
+}
+
+// Department usage interface
+export interface DepartmentUsageData {
+    department: string;
+    booking_count: number;
+    total_hours: number;
+}
+
+// Analytics date range interface
+export interface AnalyticsDateRange {
+    startDate: string;
+    endDate: string;
+}
+
+// Analytics export data interface
+export interface AnalyticsExportData {
+    bookingAnalytics: BookingAnalytics;
+    roomUtilization: RoomUtilizationData[];
+    bookingTrends: BookingTrendData[];
+    departmentUsage: DepartmentUsageData[];
+    dateRange: AnalyticsDateRange;
+    generatedAt: string;
+}
+
 // Import types for relations
 import type { Room } from './room';
 import type { User } from './user';

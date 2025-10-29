@@ -13,11 +13,22 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useEnhancedAdminNotifications } from '@/hooks/useRealTimeAvailability';
+import { CompactEnhancedConnectionStatus } from '@/components/shared/EnhancedConnectionStatus';
 
 export const Header: React.FC = () => {
     const { user, userProfile, signOut } = useAuth();
     const { unreadCount } = useNotifications();
     const [showNotifications, setShowNotifications] = useState(false);
+
+    // Enhanced admin notifications for admin users
+    const {
+        notifications: adminNotifications,
+        connectionStatus: adminConnectionStatus,
+        recentNotifications
+    } = useEnhancedAdminNotifications(
+        userProfile?.role === 'admin' ? userProfile.id : ''
+    );
 
     const handleSignOut = async () => {
         await signOut();
@@ -45,8 +56,26 @@ export const Header: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Right side - Notifications and User Profile */}
+                    {/* Right side - Connection Status, Notifications and User Profile */}
                     <div className="flex items-center space-x-4">
+                        {/* Enhanced Connection Status */}
+                        <CompactEnhancedConnectionStatus />
+
+                        {/* Admin Real-time Notifications Indicator */}
+                        {userProfile?.role === 'admin' && recentNotifications.length > 0 && (
+                            <div className="relative">
+                                <Badge
+                                    variant="outline"
+                                    className="h-6 px-2 text-xs bg-orange-50 text-orange-700 border-orange-200"
+                                >
+                                    {recentNotifications.length} admin
+                                </Badge>
+                                {adminConnectionStatus === 'connected' && (
+                                    <div className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                                )}
+                            </div>
+                        )}
+
                         {/* Notifications */}
                         <Button
                             variant="ghost"
