@@ -116,6 +116,8 @@ This project exemplifies how identifying real-world problems and applying techni
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
    ```
+   
+   ⚠️ **Security Note**: Never commit the `.env` file to version control. It's now properly ignored by Git.
 
 4. **Start the development server**
    ```bash
