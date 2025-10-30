@@ -9,6 +9,8 @@ import type { RoomWithAvailability } from "@/types/room";
 interface RoomCardProps {
   room: RoomWithAvailability;
   onBook: (roomId: string) => void;
+  onSelect?: (roomId: string) => void;
+  isSelected?: boolean;
   showAvailability?: boolean;
   enableRealTime?: boolean;
 }
@@ -23,7 +25,7 @@ const equipmentIcons: Record<string, any> = {
   'Conference Phone': Phone,
 };
 
-export const RoomCard = ({ room, onBook, showAvailability = true, enableRealTime = true }: RoomCardProps) => {
+export const RoomCard = ({ room, onBook, onSelect, isSelected = false, showAvailability = true, enableRealTime = true }: RoomCardProps) => {
   const { isConnected, lastUpdate } = useRealTimeAvailability({
     roomId: enableRealTime ? room.id : null,
     onAvailabilityChange: (roomId, isAvailable) => {
@@ -125,19 +127,32 @@ export const RoomCard = ({ room, onBook, showAvailability = true, enableRealTime
           </div>
         )}
 
-        <Button
-          onClick={() => onBook(room.id)}
-          disabled={!isAvailable}
-          className={`
-            w-full transition-all duration-200 
-            ${isAvailable
-              ? "bg-gradient-primary hover:shadow-lg hover:scale-105 transform"
-              : "opacity-50 cursor-not-allowed"
-            }
-          `}
-        >
-          {isAvailable ? "Book Now" : "Occupied"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => onBook(room.id)}
+            disabled={!isAvailable}
+            className={`
+              flex-1 transition-all duration-200 
+              ${isAvailable
+                ? "bg-gradient-primary hover:shadow-lg hover:scale-105 transform"
+                : "opacity-50 cursor-not-allowed"
+              }
+            `}
+          >
+            {isAvailable ? "Book Now" : "Occupied"}
+          </Button>
+
+          {onSelect && (
+            <Button
+              variant={isSelected ? "default" : "outline"}
+              size="sm"
+              onClick={() => onSelect(room.id)}
+              className="px-3"
+            >
+              {isSelected ? "✓" : "Select"}
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

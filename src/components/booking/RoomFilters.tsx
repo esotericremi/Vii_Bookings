@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useRoomFilters } from '@/hooks/useRooms';
+import { useRoomFloors, useRoomLocations, useRoomEquipment } from '@/hooks/useRooms';
 import type { RoomFilter } from '@/types/room';
 
 interface RoomFiltersProps {
@@ -20,7 +20,13 @@ interface RoomFiltersProps {
 export const RoomFilters = ({ filters, onFiltersChange, className }: RoomFiltersProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [localFilters, setLocalFilters] = useState<RoomFilter>(filters);
-    const { floors, locations, equipment, isLoading } = useRoomFilters();
+
+    // Get room metadata
+    const { data: floors = [], isLoading: floorsLoading } = useRoomFloors();
+    const { data: locations = [], isLoading: locationsLoading } = useRoomLocations();
+    const { data: equipment = [], isLoading: equipmentLoading } = useRoomEquipment();
+
+    const isLoading = floorsLoading || locationsLoading || equipmentLoading;
 
     // Update local filters when props change
     useEffect(() => {
@@ -144,14 +150,14 @@ export const RoomFilters = ({ filters, onFiltersChange, className }: RoomFilters
                                 Floor
                             </Label>
                             <Select
-                                value={localFilters.floor || ''}
-                                onValueChange={(value) => handleFilterChange('floor', value || undefined)}
+                                value={localFilters.floor || 'all'}
+                                onValueChange={(value) => handleFilterChange('floor', value === 'all' ? undefined : value)}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select floor" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">All floors</SelectItem>
+                                    <SelectItem value="all">All floors</SelectItem>
                                     {floors.map((floor) => (
                                         <SelectItem key={floor} value={floor}>
                                             Floor {floor}
@@ -168,14 +174,14 @@ export const RoomFilters = ({ filters, onFiltersChange, className }: RoomFilters
                                 Location
                             </Label>
                             <Select
-                                value={localFilters.location || ''}
-                                onValueChange={(value) => handleFilterChange('location', value || undefined)}
+                                value={localFilters.location || 'all'}
+                                onValueChange={(value) => handleFilterChange('location', value === 'all' ? undefined : value)}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select location" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">All locations</SelectItem>
+                                    <SelectItem value="all">All locations</SelectItem>
                                     {locations.map((location) => (
                                         <SelectItem key={location} value={location}>
                                             {location}

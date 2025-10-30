@@ -425,7 +425,12 @@ export const useEnhancedAdminNotifications = (adminUserId: string) => {
 
     // Subscribe to enhanced admin notifications
     useEffect(() => {
-        if (!adminUserId) return;
+        if (!adminUserId) {
+            // Return default state when not enabled
+            setNotifications([]);
+            setConnectionStatus('disconnected');
+            return;
+        }
 
         const id = RealtimeService.subscribeToRealTimeAdminNotifications(
             adminUserId,
@@ -533,6 +538,9 @@ export const useEnhancedGlobalRoomSync = (options: {
 
     const { onAvailabilityChange, onRealTimeUpdate } = options;
 
+    // Check if we should enable realtime (has callbacks)
+    const shouldEnable = !!(onAvailabilityChange || onRealTimeUpdate);
+
     // Handle global sync updates
     const handleGlobalSyncUpdate = useCallback((payload: {
         eventType: 'INSERT' | 'UPDATE' | 'DELETE';
@@ -580,21 +588,34 @@ export const useEnhancedGlobalRoomSync = (options: {
 
     // Subscribe to enhanced global sync with debouncing to prevent rapid reconnections
     useEffect(() => {
+        if (!shouldEnable) {
+            return;
+        }
+
         let currentSubscriptionId: string | null = null;
 
         // Add a small delay to prevent rapid subscription changes
         const timeoutId = setTimeout(() => {
-            currentSubscriptionId = RealtimeService.subscribeToGlobalRoomSync(handleGlobalSyncUpdate);
-            setSubscriptionId(currentSubscriptionId);
+            try {
+                currentSubscriptionId = RealtimeService.subscribeToGlobalRoomSync(handleGlobalSyncUpdate);
+                setSubscriptionId(currentSubscriptionId);
+            } catch (error) {
+                console.error('Failed to subscribe to global room sync:', error);
+                setConnectionStatus('error');
+            }
         }, 100);
 
         return () => {
             clearTimeout(timeoutId);
             if (currentSubscriptionId) {
-                RealtimeService.unsubscribe(currentSubscriptionId);
+                try {
+                    RealtimeService.unsubscribe(currentSubscriptionId);
+                } catch (error) {
+                    console.error('Failed to unsubscribe from global room sync:', error);
+                }
             }
         };
-    }, [handleGlobalSyncUpdate]);
+    }, [handleGlobalSyncUpdate, shouldEnable]);
 
     // Monitor connection status
     useEffect(() => {

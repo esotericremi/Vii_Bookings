@@ -45,7 +45,7 @@ const Profile: React.FC = () => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-4xl mx-auto">
             <div className="space-y-6">
                 {/* Header */}
                 <div>

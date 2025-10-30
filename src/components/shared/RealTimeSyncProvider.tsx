@@ -44,17 +44,20 @@ export const RealTimeSyncProvider: React.FC<RealTimeSyncProviderProps> = ({
     enableAdminNotifications = true
 }) => {
     const queryClient = useQueryClient();
-    const { userProfile } = useAuth();
+    const { userProfile, user, loading } = useAuth();
     const [roomUpdateCount, setRoomUpdateCount] = useState(0);
     const [lastToastTime, setLastToastTime] = useState<Date | null>(null);
 
-    // Enhanced global room synchronization
+    // Don't initialize realtime connections until user is authenticated
+    const shouldEnableRealtime = !loading && !!user;
+
+    // Enhanced global room synchronization - only when authenticated
     const {
         connectionStatus,
         lastUpdate,
         syncUpdates,
         isConnected
-    } = useEnhancedGlobalRoomSync({
+    } = useEnhancedGlobalRoomSync(shouldEnableRealtime ? {
         onAvailabilityChange: (roomId, isAvailable, source, timestamp) => {
             console.log(`Room ${roomId} availability changed:`, { isAvailable, source, timestamp });
 
@@ -83,18 +86,18 @@ export const RealTimeSyncProvider: React.FC<RealTimeSyncProviderProps> = ({
                 console.log(`Real-time ${eventType} event for room ${roomId}`);
             }
         }
-    });
+    } : {});
 
     // Connection status monitoring
     const { reconnectAll, isMonitoringEnabled } = useRealtimeConnectionStatus();
 
-    // Enhanced admin notifications (only for admin users)
+    // Enhanced admin notifications (only for admin users and when authenticated)
     const {
         notifications: adminNotifications,
         criticalNotifications,
         highPriorityNotifications
     } = useEnhancedAdminNotifications(
-        enableAdminNotifications && userProfile?.role === 'admin' ? userProfile.id : ''
+        shouldEnableRealtime && enableAdminNotifications && userProfile?.role === 'admin' ? userProfile.id : ''
     );
 
     // Handle critical admin notifications with immediate toasts

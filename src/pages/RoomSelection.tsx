@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { RoomCard } from '@/components/RoomCard';
 import { RoomFilters } from '@/components/booking/RoomFilters';
 import { AvailabilityTimeline } from '@/components/booking/AvailabilityTimeline';
-import { Layout } from '@/components/layout/Layout';
+
 import { useRoomsWithAvailability, useRoomsRealtime } from '@/hooks/useRooms';
 import { useBookings, useBookingsRealtime } from '@/hooks/useBookings';
 import { useGlobalRoomAvailability } from '@/hooks/useRealTimeAvailability';
@@ -139,19 +139,19 @@ export const RoomSelection = () => {
 
     if (roomsError) {
         return (
-            <Layout activeView="rooms">
+            <div className="px-4 sm:px-6 lg:px-8">
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                         Failed to load rooms. Please try again later.
                     </AlertDescription>
                 </Alert>
-            </Layout>
+            </div>
         );
     }
 
     return (
-        <Layout activeView="rooms">
+        <div className="px-4 sm:px-6 lg:px-8 space-y-6">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-foreground mb-2">Select a Room</h1>
                 <p className="text-muted-foreground">
@@ -159,18 +159,21 @@ export const RoomSelection = () => {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="flex flex-col xl:flex-row gap-6">
                 {/* Filters Sidebar */}
-                <div className="lg:col-span-1 order-2 lg:order-1">
-                    <RoomFilters
-                        filters={filters}
-                        onFiltersChange={setFilters}
-                        className="sticky top-4"
-                    />
+                <div className="xl:w-80 flex-shrink-0">
+                    <Card className="sticky top-4">
+                        <CardContent className="pt-6">
+                            <RoomFilters
+                                filters={filters}
+                                onFiltersChange={setFilters}
+                            />
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Main Content */}
-                <div className="lg:col-span-3 order-1 lg:order-2">
+                <div className="flex-1 min-w-0">
                     <Tabs defaultValue="rooms" className="w-full">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                             <TabsList>
@@ -313,12 +316,15 @@ export const RoomSelection = () => {
                                     {filteredRooms.map((room) => (
                                         <div
                                             key={room.id}
-                                            className={viewMode === 'list' ? 'cursor-pointer' : ''}
+                                            className={`${viewMode === 'list' ? 'cursor-pointer' : ''} ${selectedRoomId === room.id ? 'ring-2 ring-primary' : ''
+                                                }`}
                                             onClick={viewMode === 'list' ? () => setSelectedRoomId(room.id) : undefined}
                                         >
                                             <RoomCard
                                                 room={room}
                                                 onBook={handleBookRoom}
+                                                onSelect={() => setSelectedRoomId(room.id)}
+                                                isSelected={selectedRoomId === room.id}
                                                 showAvailability={true}
                                             />
                                         </div>
@@ -329,41 +335,59 @@ export const RoomSelection = () => {
 
                         <TabsContent value="timeline" className="space-y-6">
                             {selectedRoom ? (
-                                bookingsLoading ? (
-                                    <Card>
-                                        <CardHeader>
-                                            <Skeleton className="h-6 w-48" />
-                                        </CardHeader>
-                                        <CardContent className="space-y-3">
-                                            {Array.from({ length: 8 }).map((_, index) => (
-                                                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                                                    <div className="flex items-center gap-3">
-                                                        <Skeleton className="h-4 w-24" />
-                                                        <Skeleton className="h-5 w-16" />
-                                                    </div>
-                                                    <Skeleton className="h-8 w-16" />
-                                                </div>
-                                            ))}
-                                        </CardContent>
-                                    </Card>
-                                ) : bookingsError ? (
-                                    <Alert variant="destructive">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertDescription>
-                                            Failed to load booking timeline. Please try refreshing the page.
-                                        </AlertDescription>
-                                    </Alert>
-                                ) : (
-                                    <AvailabilityTimeline
-                                        roomId={selectedRoom.id}
-                                        roomName={selectedRoom.name}
-                                        date={selectedDate}
-                                        bookings={bookings}
-                                        onBookSlot={(startTime, endTime) =>
-                                            handleBookTimeSlot(selectedRoom.id, startTime, endTime)
-                                        }
-                                    />
-                                )
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-semibold">{selectedRoom.name}</h3>
+                                            <p className="text-sm text-muted-foreground">{selectedRoom.location}</p>
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setSelectedRoomId(null)}
+                                        >
+                                            Clear Selection
+                                        </Button>
+                                    </div>
+
+                                    {
+                                        bookingsLoading ? (
+                                            <Card>
+                                                <CardHeader>
+                                                    <Skeleton className="h-6 w-48" />
+                                                </CardHeader>
+                                                <CardContent className="space-y-3">
+                                                    {Array.from({ length: 8 }).map((_, index) => (
+                                                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                                                            <div className="flex items-center gap-3">
+                                                                <Skeleton className="h-4 w-24" />
+                                                                <Skeleton className="h-5 w-16" />
+                                                            </div>
+                                                            <Skeleton className="h-8 w-16" />
+                                                        </div>
+                                                    ))}
+                                                </CardContent>
+                                            </Card>
+                                        ) : bookingsError ? (
+                                            <Alert variant="destructive">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertDescription>
+                                                    Failed to load booking timeline. Please try refreshing the page.
+                                                </AlertDescription>
+                                            </Alert>
+                                        ) : (
+                                            <AvailabilityTimeline
+                                                roomId={selectedRoom.id}
+                                                roomName={selectedRoom.name}
+                                                date={selectedDate}
+                                                bookings={bookings}
+                                                onBookSlot={(startTime, endTime) =>
+                                                    handleBookTimeSlot(selectedRoom.id, startTime, endTime)
+                                                }
+                                            />
+                                        )
+                                    }
+                                </div>
                             ) : (
                                 <Card>
                                     <CardContent className="flex flex-col items-center justify-center py-12">
@@ -379,6 +403,6 @@ export const RoomSelection = () => {
                     </Tabs>
                 </div>
             </div>
-        </Layout>
+        </div>
     );
 };

@@ -17,7 +17,7 @@ const sizeClasses = {
 export const Logo: React.FC<LogoProps> = ({
     className = '',
     size = 'md',
-    showText = true
+    showText = false
 }) => {
     return (
         <div className={`flex items-center gap-3 ${className}`}>

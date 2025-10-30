@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 
 // Route to title mapping
 const routeTitles: Record<string, string> = {
-    '/': 'Home - VII Bookings',
+    '/': 'Dashboard - VII Bookings',
     '/rooms': 'Room Selection - VII Bookings',
     '/dashboard': 'Dashboard - VII Bookings',
     '/my-bookings': 'My Bookings - VII Bookings',

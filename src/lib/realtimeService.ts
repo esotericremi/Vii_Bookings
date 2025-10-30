@@ -721,9 +721,7 @@ export class RealtimeService {
         const now = Date.now();
         if (now - lastAttempt < this.MIN_RECONNECT_DELAY) {
             console.log(`Throttling reconnection attempt for ${subscriptionId}, waiting...`);
-            setTimeout(() => {
-                this.subscribeToGlobalRoomSync(callback);
-            }, this.MIN_RECONNECT_DELAY - (now - lastAttempt));
+            // Don't create a new timeout if one already exists
             return subscriptionId;
         }
 

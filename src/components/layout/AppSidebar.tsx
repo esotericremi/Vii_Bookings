@@ -4,7 +4,6 @@ import {
     Calendar,
     Users,
     Settings,
-    Home,
     CalendarDays,
     BarChart3,
     Building2,
@@ -50,9 +49,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     {
-        id: 'home',
-        label: 'Home',
-        icon: Home,
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: BarChart3,
         roles: ['staff', 'admin'],
         path: '/'
     },
@@ -62,13 +61,6 @@ const navItems: NavItem[] = [
         icon: Building2,
         roles: ['staff', 'admin'],
         path: '/rooms'
-    },
-    {
-        id: 'dashboard',
-        label: 'Dashboard',
-        icon: BarChart3,
-        roles: ['staff', 'admin'],
-        path: '/dashboard'
     },
     {
         id: 'my-bookings',
@@ -155,6 +147,11 @@ export const AppSidebar: React.FC = () => {
         item.roles.includes(userProfile?.role || 'staff')
     );
 
+    // Debug logging for admin access
+    console.log('AppSidebar - User Profile:', userProfile);
+    console.log('AppSidebar - User Role:', userProfile?.role);
+    console.log('AppSidebar - Visible Admin Items:', visibleAdminItems.length);
+
     return (
         <Sidebar>
             <SidebarHeader>
@@ -237,10 +234,10 @@ export const AppSidebar: React.FC = () => {
                                     </Avatar>
                                     <div className="grid flex-1 text-left text-sm leading-tight">
                                         <span className="truncate font-semibold">
-                                            {userProfile?.full_name || user?.email}
+                                            {userProfile?.full_name || user?.email || 'User'}
                                         </span>
-                                        <span className="truncate text-xs">
-                                            {user?.email}
+                                        <span className="truncate text-xs text-muted-foreground">
+                                            {userProfile?.role || 'staff'}
                                         </span>
                                     </div>
                                     <ChevronDown className="ml-auto size-4" />
@@ -262,9 +259,9 @@ export const AppSidebar: React.FC = () => {
                                         </Avatar>
                                         <div className="grid flex-1 text-left text-sm leading-tight">
                                             <span className="truncate font-semibold">
-                                                {userProfile?.full_name || 'User'}
+                                                {userProfile?.full_name || user?.email || 'User'}
                                             </span>
-                                            <span className="truncate text-xs">
+                                            <span className="truncate text-xs text-muted-foreground">
                                                 {user?.email}
                                             </span>
                                             <div className="flex items-center gap-1 mt-1">

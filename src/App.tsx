@@ -12,6 +12,7 @@ import { AppStateProvider } from "@/components/shared/AppStateProvider";
 import { NetworkStatusBanner, FloatingNetworkStatus } from "@/components/shared/NetworkStatusBanner";
 import { createQueryClient } from "@/lib/queryClient";
 import "@/utils/supabaseCheck"; // Make health check available in console
+import "@/utils/healthCheck"; // Make VII Bookings health check available
 import "@/lib/errorHandling"; // Initialize global error handling
 
 const queryClient = createQueryClient();

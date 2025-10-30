@@ -96,16 +96,28 @@ export const useBooking = (id: string) => {
 export const useUserBookings = (userId: string, type?: 'upcoming' | 'past') => {
     return useQuery({
         queryKey: bookingKeys.user(userId),
-        queryFn: () => {
-            if (type === 'upcoming') {
-                return bookingQueries.getUpcoming(userId);
-            } else if (type === 'past') {
-                return bookingQueries.getPast(userId);
+        queryFn: async () => {
+            console.log('useUserBookings - Starting query for userId:', userId);
+            try {
+                let result;
+                if (type === 'upcoming') {
+                    result = await bookingQueries.getUpcoming(userId);
+                } else if (type === 'past') {
+                    result = await bookingQueries.getPast(userId);
+                } else {
+                    result = await bookingQueries.getAll({ userId });
+                }
+                console.log('useUserBookings - Query completed, result:', result);
+                return result;
+            } catch (error) {
+                console.error('useUserBookings - Query failed:', error);
+                throw error;
             }
-            return bookingQueries.getAll({ userId });
         },
-        enabled: !!userId,
+        enabled: !!userId && userId !== "",
         staleTime: 1 * 60 * 1000, // 1 minute
+        retry: 3,
+        retryDelay: 1000,
     });
 };
 

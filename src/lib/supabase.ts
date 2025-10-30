@@ -33,18 +33,34 @@ export const getCurrentUser = async () => {
 
 // Helper function to get user profile
 export const getUserProfile = async (userId: string) => {
-    const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
+    console.log('getUserProfile - Fetching profile for userId:', userId);
 
-    if (error) {
-        console.error('Error getting user profile:', error);
+    try {
+        // Add timeout protection
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('getUserProfile timeout after 8 seconds')), 8000);
+        });
+
+        const queryPromise = supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+
+        console.log('getUserProfile - Query result:', { data, error });
+
+        if (error) {
+            console.error('Error getting user profile:', error);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        console.error('getUserProfile - Timeout or error:', error);
         return null;
     }
-
-    return data;
 };
 
 // Helper function to check if user is admin

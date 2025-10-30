@@ -25,7 +25,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
     return (
         <SidebarProvider>
-            <div className="min-h-screen bg-gray-50 flex">
+            <div className="min-h-screen bg-gray-50 flex w-full">
                 {/* Skip Links */}
                 <div className={srOnly}>
                     <button
@@ -43,17 +43,17 @@ export const Layout: React.FC<LayoutProps> = ({
                 </div>
 
                 <AppSidebar />
-                <SidebarInset>
+                <SidebarInset className="w-full !m-0 !ml-0">
                     <Header />
                     <main
                         id="main-content"
-                        className="flex-1 px-4 sm:px-6 lg:px-8 py-6"
+                        className="flex-1 py-6 w-full"
                         tabIndex={-1}
                         role="main"
                         aria-label="Main content"
                     >
                         {showBreadcrumb && (
-                            <nav aria-label="Breadcrumb" className="mb-6">
+                            <nav aria-label="Breadcrumb" className="mb-6 px-4 sm:px-6 lg:px-8">
                                 <Breadcrumb />
                             </nav>
                         )}

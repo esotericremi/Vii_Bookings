@@ -258,34 +258,43 @@ export const useRoomFilters = () => {
 };
 
 // Hook to get rooms with availability information
-export const useRoomsWithAvailability = (date?: string) => {
+export const useRoomsWithAvailability = (filters?: RoomFilter, date?: string) => {
     const currentDate = date || new Date().toISOString().split('T')[0];
-    const { data: rooms = [], isLoading: roomsLoading } = useRooms();
+    const { data: rooms = [], isLoading: roomsLoading } = useRooms(filters);
 
     return useQuery({
-        queryKey: [...roomKeys.lists(), 'with-availability', currentDate],
+        queryKey: [...roomKeys.lists(), 'with-availability', { filters: filters || {} }, currentDate],
         queryFn: async () => {
-            // Get availability for all rooms
-            const roomsWithAvailability = await Promise.all(
-                rooms.map(async (room) => {
-                    try {
-                        const availability = await roomQueries.getAvailability(room.id, currentDate);
-                        return {
-                            ...room,
-                            availability: availability || []
-                        };
-                    } catch (error) {
-                        console.error(`Failed to get availability for room ${room.id}:`, error);
-                        return {
-                            ...room,
-                            availability: []
-                        };
-                    }
-                })
-            );
-            return roomsWithAvailability;
+            try {
+                // Get availability for all rooms
+                const roomsWithAvailability = await Promise.all(
+                    rooms.map(async (room) => {
+                        try {
+                            const availability = await roomQueries.getAvailability(room.id, currentDate);
+                            return {
+                                ...room,
+                                availability: availability || []
+                            };
+                        } catch (error) {
+                            console.error(`Failed to get availability for room ${room.id}:`, error);
+                            return {
+                                ...room,
+                                availability: []
+                            };
+                        }
+                    })
+                );
+                return roomsWithAvailability;
+            } catch (error) {
+                console.error('Failed to get rooms with availability:', error);
+                // Return rooms without availability data as fallback
+                return rooms.map(room => ({
+                    ...room,
+                    availability: []
+                }));
+            }
         },
-        enabled: !roomsLoading && rooms.length > 0,
+        enabled: !roomsLoading && rooms.length >= 0, // Allow empty arrays
         staleTime: 1 * 60 * 1000, // 1 minute
         gcTime: 5 * 60 * 1000, // 5 minutes
     });

@@ -12,7 +12,6 @@ import { Unauthorized } from '@/pages/auth/Unauthorized';
 import NotFound from '@/pages/NotFound';
 
 // Staff pages (keep these as regular imports for faster initial load)
-import Index from '@/pages/Index';
 import { RoomSelection } from '@/pages/RoomSelection';
 import Dashboard from '@/pages/Dashboard';
 import { MyBookings } from '@/pages/MyBookings';
@@ -49,7 +48,7 @@ export const AppRouter: React.FC = () => {
                 element={
                     <ProtectedRoute>
                         <Layout>
-                            <Index />
+                            <Dashboard />
                         </Layout>
                     </ProtectedRoute>
                 }
@@ -67,17 +66,6 @@ export const AppRouter: React.FC = () => {
             />
 
             <Route
-                path="/dashboard"
-                element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <Dashboard />
-                        </Layout>
-                    </ProtectedRoute>
-                }
-            />
-
-            <Route
                 path="/my-bookings"
                 element={
                     <ProtectedRoute>
@@ -89,7 +77,7 @@ export const AppRouter: React.FC = () => {
             />
 
             <Route
-                path="/book/:roomId?"
+                path="/book"
                 element={
                     <ProtectedRoute>
                         <Layout>

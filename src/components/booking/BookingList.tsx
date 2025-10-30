@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { format, isAfter, isBefore, startOfDay } from "date-fns";
 import { Calendar, Clock, Users, Edit, Trash2, Download, Filter, Search, RefreshCw, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,19 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
 
     const { data: allBookings, isLoading, error, refetch } = useUserBookings(user?.id || "");
     const cancelBookingMutation = useCancelBooking();
+
+    // Debug logging
+    console.log('BookingList - User:', user?.id, 'Loading:', isLoading, 'Error:', error, 'Data:', allBookings);
+
+    // Add timeout for debugging
+    React.useEffect(() => {
+        if (isLoading) {
+            const timeout = setTimeout(() => {
+                console.log('BookingList - Still loading after 10 seconds, this might indicate a stuck query');
+            }, 10000);
+            return () => clearTimeout(timeout);
+        }
+    }, [isLoading]);
 
     // Enhanced state management for cancel operations
     const cancelState = useAsyncState('cancel-booking');
@@ -179,17 +192,30 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
         }
     };
 
+    // Show empty state if loading takes too long (fallback)
+    const [showFallback, setShowFallback] = React.useState(false);
+    React.useEffect(() => {
+        if (isLoading) {
+            const fallbackTimer = setTimeout(() => {
+                setShowFallback(true);
+            }, 15000); // 15 seconds
+            return () => clearTimeout(fallbackTimer);
+        } else {
+            setShowFallback(false);
+        }
+    }, [isLoading]);
+
     // Enhanced loading state
-    if (isLoading) {
+    if (isLoading && !showFallback) {
         return (
-            <Card>
-                <CardHeader>
+            <div className="w-full">
+                <div className="mb-6">
                     <div className="flex items-center justify-between">
                         <LoadingSkeleton variant="text" lines={1} className="w-32" />
                         <LoadingSkeleton variant="button" />
                     </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
+                </div>
+                <div className="space-y-6">
                     {/* Filter skeleton */}
                     <div className="flex flex-col sm:flex-row gap-4">
                         <LoadingSkeleton variant="text" lines={1} className="flex-1 h-10" />
@@ -207,22 +233,22 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
                             </Card>
                         ))}
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         );
     }
 
     // Enhanced error state
     if (error) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
-                        My Bookings
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
+            <div className="w-full">
+                <div className="mb-6">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                        Error Loading Bookings
+                    </h2>
+                </div>
+                <div>
                     <ErrorDisplay
                         error={error}
                         onRetry={refetch}
@@ -230,17 +256,48 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
                         title="Failed to load bookings"
                         retryable={!isOffline}
                     />
-                </CardContent>
-            </Card>
+                </div>
+            </div >
+        );
+    }
+
+    // Fallback state if loading takes too long
+    if (showFallback) {
+        return (
+            <div className="w-full">
+                <div className="mb-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold flex items-center gap-2">
+                            <Calendar className="h-5 w-5" />
+                            My Bookings
+                        </h2>
+                    </div>
+                </div>
+                <div className="text-center py-12">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <h3 className="text-lg font-semibold mb-2">Loading taking longer than expected</h3>
+                    <p className="text-muted-foreground mb-4">
+                        This might be due to a slow connection or database issue.
+                    </p>
+                    <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                            You currently have no bookings to display.
+                        </p>
+                        <Button onClick={() => window.location.href = '/rooms'} variant="outline">
+                            Book a Room
+                        </Button>
+                    </div>
+                </div>
+            </div>
         );
     }
 
     return (
         <ErrorBoundary level="component">
-            <Card>
-                <CardHeader>
+            <div className="w-full">
+                <div className="mb-6">
                     <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
+                        <h2 className="text-2xl font-bold flex items-center gap-2">
                             <Calendar className="h-5 w-5" />
                             My Bookings
                             {isOffline && (
@@ -249,7 +306,7 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
                                     Offline
                                 </Badge>
                             )}
-                        </CardTitle>
+                        </h2>
                         <div className="flex items-center gap-2">
                             {error && (
                                 <Button
@@ -277,9 +334,9 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
                             </Button>
                         </div>
                     </div>
-                </CardHeader>
+                </div>
 
-                <CardContent className="space-y-6">
+                <div className="space-y-6">
                     {/* Filters and Search */}
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="flex-1">
@@ -451,8 +508,8 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
                             )}
                         </TabsContent>
                     </Tabs>
-                </CardContent>
-            </Card>
-        </ErrorBoundary>
+                </div>
+            </div>
+        </ErrorBoundary >
     );
 };

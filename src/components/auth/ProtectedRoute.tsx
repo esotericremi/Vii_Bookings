@@ -17,8 +17,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <LoadingSpinner />
+            <div className="flex items-center justify-center min-h-screen bg-background">
+                <div className="text-center space-y-4">
+                    <LoadingSpinner />
+                    <p className="text-muted-foreground">Loading your session...</p>
+                </div>
             </div>
         );
     }

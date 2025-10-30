@@ -1,38 +1,57 @@
 import { useState } from "react";
-import { BarChart3, Calendar, Users, AlertTriangle, Settings, TrendingUp } from "lucide-react";
+import { BarChart3, Calendar, Users, AlertTriangle, Settings, TrendingUp, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useBookings } from "@/hooks/useBookings";
+import { useRooms } from "@/hooks/useRooms";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { format, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
-interface AdminStats {
-  totalBookings: number;
-  activeBookings: number;
-  utilizationRate: number;
-  ghostBookings: number;
-  popularRooms: Array<{ name: string; bookings: number }>;
-  peakHours: Array<{ time: string; bookings: number }>;
-}
-
-interface AdminDashboardProps {
-  stats: AdminStats;
-  onOverrideBooking: (bookingId: string) => void;
-  onManageRoom: (roomId: string) => void;
-}
-
-export const AdminDashboard = ({ stats, onOverrideBooking, onManageRoom }: AdminDashboardProps) => {
+export const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState('today');
 
-  const mockBookings = [
-    { id: '1', room: 'Conference A', user: 'john@company.com', time: '09:00-10:00', status: 'active' },
-    { id: '2', room: 'Meeting Room B', user: 'jane@company.com', time: '10:30-11:30', status: 'pending' },
-    { id: '3', room: 'Huddle Space 1', user: 'team@company.com', time: '14:00-15:00', status: 'ghost' },
-  ];
+  // Fetch real data
+  const { data: allBookings, isLoading: bookingsLoading, refetch: refetchBookings } = useBookings();
+  const { data: rooms, isLoading: roomsLoading } = useRooms();
 
-  const mockIssues = [
-    { id: '1', room: 'Conference A', issue: 'Projector not working', reporter: 'john@company.com', time: '2 hours ago' },
-    { id: '2', room: 'Meeting Room B', issue: 'AC too cold', reporter: 'jane@company.com', time: '30 minutes ago' },
-  ];
+  const isLoading = bookingsLoading || roomsLoading;
+
+  // Calculate real stats
+  const today = new Date();
+  const todayStart = startOfDay(today);
+  const todayEnd = endOfDay(today);
+
+  const todayBookings = allBookings?.filter(booking => {
+    const bookingDate = new Date(booking.start_time);
+    return bookingDate >= todayStart && bookingDate <= todayEnd;
+  }) || [];
+
+  const activeBookings = todayBookings.filter(booking => {
+    const now = new Date();
+    const start = new Date(booking.start_time);
+    const end = new Date(booking.end_time);
+    return booking.status === 'confirmed' && start <= now && end >= now;
+  });
+
+  const upcomingBookings = todayBookings.filter(booking => {
+    const now = new Date();
+    const start = new Date(booking.start_time);
+    return booking.status === 'confirmed' && start > now;
+  }).slice(0, 5);
+
+  const totalBookings = todayBookings.length;
+  const activeCount = activeBookings.length;
+  const totalRooms = rooms?.filter(room => room.is_active).length || 0;
+  const utilizationRate = totalRooms > 0 ? Math.round((activeCount / totalRooms) * 100) : 0;
+  const ghostBookings = todayBookings.filter(booking =>
+    booking.status === 'confirmed' &&
+    isBefore(new Date(booking.start_time), new Date()) &&
+    !booking.checked_in
+  ).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -118,14 +137,14 @@ export const AdminDashboard = ({ stats, onOverrideBooking, onManageRoom }: Admin
                       <div className="text-sm">{booking.time}</div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge 
+                      <Badge
                         variant={
-                          booking.status === 'active' ? 'default' : 
-                          booking.status === 'ghost' ? 'destructive' : 'secondary'
+                          booking.status === 'active' ? 'default' :
+                            booking.status === 'ghost' ? 'destructive' : 'secondary'
                         }
                         className={
                           booking.status === 'active' ? 'bg-success' :
-                          booking.status === 'ghost' ? 'bg-occupied' : ''
+                            booking.status === 'ghost' ? 'bg-occupied' : ''
                         }
                       >
                         {booking.status}
@@ -173,8 +192,8 @@ export const AdminDashboard = ({ stats, onOverrideBooking, onManageRoom }: Admin
                       <span>{hour.time}</span>
                       <div className="flex items-center gap-2">
                         <div className="w-20 bg-secondary rounded-full h-2">
-                          <div 
-                            className="bg-primary h-2 rounded-full" 
+                          <div
+                            className="bg-primary h-2 rounded-full"
                             style={{ width: `${(hour.bookings / 10) * 100}%` }}
                           />
                         </div>
