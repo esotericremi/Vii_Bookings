@@ -22,7 +22,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Omit<SystemSettings, 'id' | 'created_at' |
     buffer_time_minutes: 0,
     company_name: 'Company',
     company_logo_url: null,
-    theme_color: '#3b82f6'
+    theme_color: '#ff304f'
 };
 
 // User role management types

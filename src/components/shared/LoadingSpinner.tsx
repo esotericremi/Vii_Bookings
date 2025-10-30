@@ -2,6 +2,7 @@ import React from 'react';
 import { Loader2, Wifi, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNetworkStatus } from './NetworkStatusProvider';
+import { Logo } from './Logo';
 
 interface LoadingSpinnerProps {
     size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -188,7 +189,7 @@ export const FullPageLoading: React.FC<FullPageLoadingProps> = ({
             <div className="text-center space-y-4">
                 {showLogo && (
                     <div className="mb-8">
-                        <h1 className="text-2xl font-bold text-gray-900">Meeting Room Booking</h1>
+                        <Logo size="xl" />
                     </div>
                 )}
                 <LoadingSpinner

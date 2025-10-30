@@ -17,7 +17,7 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 9%;
 
-    --primary: 195 100% 50%;
+    --primary: 351 100% 59%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 5% 96%;
@@ -34,7 +34,7 @@ All colors MUST be HSL.
 
     --border: 240 6% 90%;
     --input: 240 6% 90%;
-    --ring: 195 100% 50%;
+    --ring: 351 100% 59%;
 
     /* Room booking specific colors */
     --success: 142 76% 36%;
@@ -48,7 +48,7 @@ All colors MUST be HSL.
     --pending: 38 92% 50%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(195 100% 50%), hsl(195 100% 60%));
+    --gradient-primary: linear-gradient(135deg, hsl(351 100% 59%), hsl(351 100% 69%));
     --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
     --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(240 5% 98%));
 

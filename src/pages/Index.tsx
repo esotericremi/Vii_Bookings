@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useAuth } from "@/hooks/useAuth";
+import { Logo } from "@/components/shared/Logo";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -15,11 +16,14 @@ const Index = () => {
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="text-center space-y-4">
+        <div className="flex justify-center">
+          <Logo size="xl" showText={false} />
+        </div>
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Welcome to VII Bookings
         </h1>
-        <p className="text-lg text-gray-600">
+        <p className="text-lg text-muted-foreground">
           Your smart meeting room booking solution
         </p>
       </div>

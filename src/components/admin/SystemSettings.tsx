@@ -46,7 +46,7 @@ export const SystemSettings: React.FC = () => {
             buffer_time_minutes: 0,
             company_name: 'Company',
             company_logo_url: '',
-            theme_color: '#3b82f6'
+            theme_color: '#ff304f'
         }
     });
 
