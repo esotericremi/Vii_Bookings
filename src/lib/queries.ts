@@ -202,7 +202,7 @@ export const roomQueries = {
 
 // Booking queries
 export const bookingQueries = {
-    // Get all bookings with relations
+    // Get all bookings with relations and pagination
     getAll: async (filters?: {
         userId?: string;
         roomId?: string;
@@ -211,6 +211,7 @@ export const bookingQueries = {
         endDate?: string;
         limit?: number;
         offset?: number;
+        includeCount?: boolean;
     }) => {
         let query = supabase
             .from('bookings')
@@ -218,8 +219,8 @@ export const bookingQueries = {
                 *,
                 room:rooms(*),
                 user:users(*)
-            `)
-            .order('start_time', { ascending: true });
+            `, { count: filters?.includeCount ? 'exact' : undefined })
+            .order('start_time', { ascending: false }); // Changed to descending for recent first
 
         if (filters?.userId) {
             query = query.eq('user_id', filters.userId);
@@ -236,17 +237,55 @@ export const bookingQueries = {
         if (filters?.endDate) {
             query = query.lte('end_time', filters.endDate);
         }
-        if (filters?.limit) {
+        if (filters?.limit && filters?.offset !== undefined) {
+            query = query.range(filters.offset, filters.offset + filters.limit - 1);
+        } else if (filters?.limit) {
             query = query.limit(filters.limit);
         }
-        if (filters?.offset) {
-            query = query.range(filters.offset, (filters.offset + (filters.limit || 50)) - 1);
-        }
 
-        const { data, error } = await query;
+        const { data, error, count } = await query;
 
         if (error) throw error;
+
+        if (filters?.includeCount) {
+            return { data: data as BookingWithRelations[], count: count || 0 };
+        }
+
         return data as BookingWithRelations[];
+    },
+
+    // Get bookings count for pagination
+    getCount: async (filters?: {
+        userId?: string;
+        roomId?: string;
+        status?: string;
+        startDate?: string;
+        endDate?: string;
+    }) => {
+        let query = supabase
+            .from('bookings')
+            .select('*', { count: 'exact', head: true });
+
+        if (filters?.userId) {
+            query = query.eq('user_id', filters.userId);
+        }
+        if (filters?.roomId) {
+            query = query.eq('room_id', filters.roomId);
+        }
+        if (filters?.status) {
+            query = query.eq('status', filters.status);
+        }
+        if (filters?.startDate) {
+            query = query.gte('start_time', filters.startDate);
+        }
+        if (filters?.endDate) {
+            query = query.lte('end_time', filters.endDate);
+        }
+
+        const { count, error } = await query;
+
+        if (error) throw error;
+        return count || 0;
     },
 
     // Get booking by ID

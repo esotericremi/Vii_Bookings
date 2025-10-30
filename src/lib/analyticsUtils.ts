@@ -236,8 +236,9 @@ export const getDateRangeOptions = () => {
             endDate: format(new Date(now.getFullYear(), now.getMonth(), 0), 'yyyy-MM-dd')
         }
     ];
-};//
- Generate PDF report using browser print functionality
+};
+
+// Generate PDF report using browser print functionality
 export const generatePDFReport = (data: AnalyticsExportData) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;

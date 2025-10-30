@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar, Grid, List, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -21,6 +22,8 @@ import type { RoomFilter } from '@/types/room';
 export const RoomSelection = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+
+    usePageTitle('Room Selection - VII Bookings');
     const [filters, setFilters] = useState<RoomFilter>({});
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');

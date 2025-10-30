@@ -1,364 +1,130 @@
-import { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, Plus } from "lucide-react";
-import { Navigation } from "@/components/Navigation";
-import { RoomCard } from "@/components/RoomCard";
-import { BookingForm } from "@/components/BookingForm";
-import { CheckInInterface } from "@/components/CheckInInterface";
-import { AdminDashboard } from "@/components/AdminDashboard";
-import { CalendarView } from "@/components/CalendarView";
+import { Search, Filter, Calendar, Users, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { Room, Booking } from "@/types/room";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [activeView, setActiveView] = useState('rooms');
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [capacityFilter, setCapacityFilter] = useState('all');
-  const { toast } = useToast();
+  const { userProfile } = useAuth();
 
-  // Mock data
-  const rooms: Room[] = [
-    {
-      id: '1',
-      name: 'Conference Room A',
-      capacity: 12,
-      floor: 2,
-      amenities: ['Projector', 'Whiteboard', 'Video Call', 'WiFi'],
-      description: 'Perfect for team presentations and client meetings',
-    },
-    {
-      id: '2',
-      name: 'Meeting Room B',
-      capacity: 6,
-      floor: 1,
-      amenities: ['WiFi', 'Whiteboard'],
-      description: 'Ideal for small team meetings and brainstorming sessions',
-    },
-    {
-      id: '3',
-      name: 'Huddle Space 1',
-      capacity: 4,
-      floor: 1,
-      amenities: ['WiFi', 'Monitor'],
-      description: 'Quick standup meetings and informal discussions',
-    },
-    {
-      id: '4',
-      name: 'Executive Boardroom',
-      capacity: 16,
-      floor: 3,
-      amenities: ['Projector', 'Video Call', 'WiFi', 'Coffee'],
-      description: 'Premium space for executive meetings and board sessions',
-    },
-  ];
-
-  const mockBooking = {
-    id: '1',
-    title: 'Team Standup',
-    startTime: new Date(),
-    endTime: new Date(Date.now() + 3600000),
-    roomName: 'Conference Room A',
-    status: 'pending',
-  };
-
-  // Mock bookings data for calendar view
-  const mockBookings: Booking[] = [
-    {
-      id: '1',
-      roomId: '1',
-      userId: 'user1',
-      userEmail: 'engineering.john@company.com',
-      title: 'Sprint Planning',
-      startTime: new Date(2024, 0, 15, 9, 0),
-      endTime: new Date(2024, 0, 15, 10, 30),
-      isRecurring: false,
-      status: 'confirmed',
-      createdAt: new Date(),
-    },
-    {
-      id: '2',
-      roomId: '2',
-      userId: 'user2',
-      userEmail: 'marketing.sarah@company.com',
-      title: 'Campaign Review',
-      startTime: new Date(2024, 0, 15, 11, 0),
-      endTime: new Date(2024, 0, 15, 12, 0),
-      isRecurring: false,
-      status: 'confirmed',
-      createdAt: new Date(),
-    },
-    {
-      id: '3',
-      roomId: '3',
-      userId: 'user3',
-      userEmail: 'sales.mike@company.com',
-      title: 'Client Presentation',
-      startTime: new Date(2024, 0, 15, 14, 0),
-      endTime: new Date(2024, 0, 15, 15, 30),
-      isRecurring: false,
-      status: 'confirmed',
-      createdAt: new Date(),
-    },
-    {
-      id: '4',
-      roomId: '4',
-      userId: 'user4',
-      userEmail: 'hr.lisa@company.com',
-      title: 'All Hands Meeting',
-      startTime: new Date(2024, 0, 16, 10, 0),
-      endTime: new Date(2024, 0, 16, 11, 0),
-      isRecurring: true,
-      status: 'confirmed',
-      createdAt: new Date(),
-    },
-    {
-      id: '5',
-      roomId: '1',
-      userId: 'user5',
-      userEmail: 'finance.david@company.com',
-      title: 'Budget Review',
-      startTime: new Date(2024, 0, 16, 15, 0),
-      endTime: new Date(2024, 0, 16, 16, 30),
-      isRecurring: false,
-      status: 'confirmed',
-      createdAt: new Date(),
-    },
-  ];
-
-  const adminStats = {
-    totalBookings: 24,
-    activeBookings: 8,
-    utilizationRate: 76,
-    ghostBookings: 3,
-    popularRooms: [
-      { name: 'Conference Room A', bookings: 12 },
-      { name: 'Meeting Room B', bookings: 8 },
-      { name: 'Huddle Space 1', bookings: 6 },
-    ],
-    peakHours: [
-      { time: '9:00 AM', bookings: 8 },
-      { time: '2:00 PM', bookings: 6 },
-      { time: '10:00 AM', bookings: 5 },
-    ],
-  };
-
-  const filteredRooms = rooms.filter(room => {
-    const matchesSearch = room.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCapacity = capacityFilter === 'all' ||
-      (capacityFilter === 'small' && room.capacity <= 6) ||
-      (capacityFilter === 'medium' && room.capacity > 6 && room.capacity <= 12) ||
-      (capacityFilter === 'large' && room.capacity > 12);
-
-    return matchesSearch && matchesCapacity;
-  });
-
-  const handleBookRoom = (roomId: string) => {
-    const room = rooms.find(r => r.id === roomId);
-    if (room) {
-      setSelectedRoom(room);
-    }
-  };
-
-  const handleBookingSubmit = (bookingData: any) => {
-    console.log('Booking submitted:', bookingData);
-    toast({
-      title: "Room booked successfully! 🎉",
-      description: "Calendar invite sent. We've got your back!",
-    });
-    setSelectedRoom(null);
-    setActiveView('bookings');
-  };
-
-  const handleCheckIn = (bookingId: string) => {
-    console.log('Checked in:', bookingId);
-  };
-
-  const handleExtend = (bookingId: string, minutes: number) => {
-    console.log('Extended booking:', bookingId, minutes);
-  };
-
-  const handleEndEarly = (bookingId: string) => {
-    console.log('Ended early:', bookingId);
-  };
-
-  const renderContent = () => {
-    if (selectedRoom) {
-      return (
-        <div className="max-w-4xl mx-auto">
-          <BookingForm
-            room={selectedRoom}
-            onSubmit={handleBookingSubmit}
-            onCancel={() => setSelectedRoom(null)}
-          />
-        </div>
-      );
-    }
-
-    switch (activeView) {
-      case 'rooms':
-        return (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Find Your Perfect Room</h2>
-                <p className="text-muted-foreground">Book a space that fits your team and needs</p>
-                <Button
-                  onClick={() => navigate('/rooms')}
-                  className="mt-4"
-                  size="lg"
-                >
-                  Go to Advanced Room Selection
-                </Button>
-              </div>
-
-              <div className="flex gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search rooms..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-
-                <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-                  <SelectTrigger className="w-32">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sizes</SelectItem>
-                    <SelectItem value="small">1-6 people</SelectItem>
-                    <SelectItem value="medium">7-12 people</SelectItem>
-                    <SelectItem value="large">13+ people</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRooms.map((room, index) => (
-                <div key={room.id} style={{ animationDelay: `${index * 100}ms` }}>
-                  <RoomCard
-                    room={room}
-                    isAvailable={Math.random() > 0.3} // Mock availability
-                    nextAvailable={Math.random() > 0.5 ? "2:30 PM" : undefined}
-                    onBook={handleBookRoom}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {filteredRooms.length === 0 && (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <p className="text-muted-foreground">No rooms match your search criteria</p>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setCapacityFilter('all');
-                    }}
-                    className="mt-4"
-                  >
-                    Clear Filters
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        );
-
-      case 'bookings':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold">My Bookings</h2>
-              <p className="text-muted-foreground">Manage your upcoming meetings</p>
-            </div>
-
-            <div className="grid gap-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Team Standup</CardTitle>
-                    <Badge className="bg-success">Confirmed</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Conference Room A • Today 9:00-10:00 AM</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      Edit
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      Cancel
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        );
-
-      case 'checkin':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold">Check In to Your Meeting</h2>
-              <p className="text-muted-foreground">Confirm your presence to keep your room</p>
-            </div>
-
-            <CheckInInterface
-              booking={mockBooking}
-              onCheckIn={handleCheckIn}
-              onExtend={handleExtend}
-              onEndEarly={handleEndEarly}
-            />
-          </div>
-        );
-
-      case 'calendar':
-        return (
-          <CalendarView
-            rooms={rooms}
-            bookings={mockBookings}
-          />
-        );
-
-      case 'admin':
-        return (
-          <AdminDashboard
-            stats={adminStats}
-            onOverrideBooking={(id) => console.log('Override:', id)}
-            onManageRoom={(id) => console.log('Manage:', id)}
-          />
-        );
-
-      default:
-        return <div>Unknown view</div>;
-    }
-  };
+  usePageTitle('Home - VII Bookings');
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation
-        activeView={activeView}
-        onViewChange={setActiveView}
-        notificationCount={3}
-      />
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Welcome to VII Bookings
+        </h1>
+        <p className="text-lg text-gray-600">
+          Your smart meeting room booking solution
+        </p>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderContent()}
-      </main>
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/rooms')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-blue-600" />
+              Find & Book Rooms
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600">
+              Browse available meeting rooms and make instant bookings
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/my-bookings')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-green-600" />
+              My Bookings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600">
+              View and manage your upcoming meeting reservations
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-purple-600" />
+              Dashboard
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600">
+              View room availability and booking insights
+            </p>
+          </CardContent>
+        </Card>
+
+        {userProfile?.role === 'admin' && (
+          <>
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/bookings')}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-orange-600" />
+                  Manage Bookings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Oversee all bookings and resolve conflicts
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/rooms')}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-red-600" />
+                  Manage Rooms
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Add, edit, and configure meeting rooms
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/analytics')}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-indigo-600" />
+                  Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  View detailed usage statistics and reports
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+
+      {/* Quick Book Section */}
+      <div className="text-center">
+        <Button
+          onClick={() => navigate('/rooms')}
+          size="lg"
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          Book a Room Now
+        </Button>
+      </div>
     </div>
   );
 };

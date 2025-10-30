@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Calendar,
     Users,
@@ -14,8 +15,8 @@ import { cn } from '@/lib/utils';
 import type { UserRole } from '@/types/user';
 
 interface NavigationProps {
-    activeView: string;
-    onViewChange: (view: string) => void;
+    activeView?: string;
+    onViewChange?: (view: string) => void;
     userRole: UserRole;
 }
 
@@ -24,63 +25,73 @@ interface NavItem {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     roles: UserRole[];
+    path: string;
 }
 
 const navItems: NavItem[] = [
     {
-        id: 'rooms',
-        label: 'Rooms',
+        id: 'home',
+        label: 'Home',
         icon: Home,
-        roles: ['staff', 'admin']
+        roles: ['staff', 'admin'],
+        path: '/'
+    },
+    {
+        id: 'rooms',
+        label: 'Room Selection',
+        icon: Building2,
+        roles: ['staff', 'admin'],
+        path: '/rooms'
     },
     {
         id: 'dashboard',
         label: 'Dashboard',
         icon: BarChart3,
-        roles: ['staff', 'admin']
+        roles: ['staff', 'admin'],
+        path: '/dashboard'
     },
     {
-        id: 'bookings',
+        id: 'my-bookings',
         label: 'My Bookings',
         icon: Calendar,
-        roles: ['staff', 'admin']
-    },
-    {
-        id: 'calendar',
-        label: 'All Meetings',
-        icon: CalendarDays,
-        roles: ['staff', 'admin']
-    },
-    {
-        id: 'checkin',
-        label: 'Check In',
-        icon: UserCheck,
-        roles: ['staff', 'admin']
+        roles: ['staff', 'admin'],
+        path: '/my-bookings'
     },
     // Admin-only items
     {
         id: 'admin-dashboard',
-        label: 'Dashboard',
+        label: 'Admin Dashboard',
         icon: BarChart3,
-        roles: ['admin']
+        roles: ['admin'],
+        path: '/admin/dashboard'
     },
     {
         id: 'admin-rooms',
         label: 'Manage Rooms',
         icon: Building2,
-        roles: ['admin']
+        roles: ['admin'],
+        path: '/admin/rooms'
     },
     {
         id: 'admin-bookings',
         label: 'All Bookings',
         icon: Users,
-        roles: ['admin']
+        roles: ['admin'],
+        path: '/admin/bookings'
+    },
+    {
+        id: 'admin-analytics',
+        label: 'Analytics',
+        icon: CalendarDays,
+        roles: ['admin'],
+        path: '/admin/analytics'
     },
     {
         id: 'admin-settings',
         label: 'Settings',
         icon: Settings,
-        roles: ['admin']
+        roles: ['admin'],
+        path: '/admin/settings'
     },
 ];
 
@@ -89,6 +100,8 @@ export const Navigation: React.FC<NavigationProps> = ({
     onViewChange,
     userRole
 }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
     // Filter nav items based on user role
     const visibleNavItems = navItems.filter(item =>
         item.roles.includes(userRole)
@@ -102,6 +115,14 @@ export const Navigation: React.FC<NavigationProps> = ({
         item.id.startsWith('admin-')
     );
 
+    const handleNavigation = (item: NavItem) => {
+        if (onViewChange) {
+            onViewChange(item.id);
+        } else {
+            navigate(item.path);
+        }
+    };
+
     const renderNavItems = (items: NavItem[], section?: string) => (
         <>
             {section && items.length > 0 && (
@@ -113,13 +134,13 @@ export const Navigation: React.FC<NavigationProps> = ({
             )}
             {items.map((item) => {
                 const Icon = item.icon;
-                const isActive = activeView === item.id;
+                const isActive = activeView === item.id || location.pathname === item.path;
 
                 return (
                     <Button
                         key={item.id}
                         variant={isActive ? "default" : "ghost"}
-                        onClick={() => onViewChange(item.id)}
+                        onClick={() => handleNavigation(item)}
                         className={cn(
                             "flex items-center gap-2 transition-all duration-200 justify-start",
                             "md:mx-2",
@@ -153,13 +174,13 @@ export const Navigation: React.FC<NavigationProps> = ({
                     <div className="grid grid-cols-4 gap-1 p-2">
                         {visibleNavItems.slice(0, 4).map((item) => {
                             const Icon = item.icon;
-                            const isActive = activeView === item.id;
+                            const isActive = activeView === item.id || location.pathname === item.path;
 
                             return (
                                 <Button
                                     key={item.id}
                                     variant={isActive ? "default" : "ghost"}
-                                    onClick={() => onViewChange(item.id)}
+                                    onClick={() => handleNavigation(item)}
                                     className={cn(
                                         "flex flex-col items-center gap-1 h-auto py-3 text-xs",
                                         isActive
@@ -180,13 +201,13 @@ export const Navigation: React.FC<NavigationProps> = ({
                             <div className="grid grid-cols-2 gap-1">
                                 {visibleNavItems.slice(4).map((item) => {
                                     const Icon = item.icon;
-                                    const isActive = activeView === item.id;
+                                    const isActive = activeView === item.id || location.pathname === item.path;
 
                                     return (
                                         <Button
                                             key={item.id}
                                             variant={isActive ? "default" : "ghost"}
-                                            onClick={() => onViewChange(item.id)}
+                                            onClick={() => handleNavigation(item)}
                                             className={cn(
                                                 "flex items-center gap-2 justify-start text-xs py-2",
                                                 isActive

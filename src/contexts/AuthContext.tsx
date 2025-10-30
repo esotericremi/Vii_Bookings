@@ -126,8 +126,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     const signOut = async () => {
-        const { error } = await supabase.auth.signOut();
-        return { error };
+        try {
+            // Clear local state first
+            setUser(null);
+            setUserProfile(null);
+            setSession(null);
+
+            // Sign out from Supabase
+            const { error } = await supabase.auth.signOut();
+
+            if (error) {
+                console.error('Sign out error:', error);
+            }
+
+            // Force redirect to login page
+            window.location.href = '/login';
+
+            return { error };
+        } catch (error) {
+            console.error('Unexpected sign out error:', error);
+            // Still redirect even if there's an error
+            window.location.href = '/login';
+            return { error: error as AuthError };
+        }
     };
 
     const resetPassword = async (email: string) => {

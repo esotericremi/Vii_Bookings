@@ -1,63 +1,66 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Header } from './Header';
-import { Navigation } from './Navigation';
-import { NotificationCenter } from './NotificationCenter';
-import { useAuth } from '@/hooks/useAuth';
+import { AppSidebar } from './AppSidebar';
+import { Breadcrumb } from '@/components/navigation/Breadcrumb';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { useSkipLinks } from '@/hooks/useFocusManagement';
+import { srOnly } from '@/lib/accessibility';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 interface LayoutProps {
     children: React.ReactNode;
-    activeView?: string;
-    onViewChange?: (view: string) => void;
+    pageTitle?: string;
+    showBreadcrumb?: boolean;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
     children,
-    activeView = 'rooms',
-    onViewChange
+    pageTitle,
+    showBreadcrumb = true
 }) => {
-    const { userProfile } = useAuth();
-    const navigate = useNavigate();
+    const { skipToContent, skipToNavigation } = useSkipLinks();
 
-    const handleViewChange = (view: string) => {
-        if (onViewChange) {
-            onViewChange(view);
-        } else {
-            // Default routing behavior
-            switch (view) {
-                case 'rooms':
-                    navigate('/');
-                    break;
-                case 'dashboard':
-                    navigate('/dashboard');
-                    break;
-                case 'room-selection':
-                    navigate('/rooms');
-                    break;
-                case 'admin-bookings':
-                    navigate('/admin/bookings');
-                    break;
-                case 'admin-settings':
-                    navigate('/admin/settings');
-                    break;
-                default:
-                    if (onViewChange) onViewChange(view);
-            }
-        }
-    };
+    // Set page title
+    usePageTitle(pageTitle);
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <Header />
-            <Navigation
-                activeView={activeView}
-                onViewChange={handleViewChange}
-                userRole={userProfile?.role || 'staff'}
-            />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {children}
-            </main>
-            <NotificationCenter />
-        </div>
+        <SidebarProvider>
+            <div className="min-h-screen bg-gray-50 flex">
+                {/* Skip Links */}
+                <div className={srOnly}>
+                    <button
+                        onClick={skipToContent}
+                        className="focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"
+                    >
+                        Skip to main content
+                    </button>
+                    <button
+                        onClick={skipToNavigation}
+                        className="focus:not-sr-only focus:absolute focus:top-4 focus:left-32 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"
+                    >
+                        Skip to navigation
+                    </button>
+                </div>
+
+                <AppSidebar />
+                <SidebarInset>
+                    <Header />
+                    <main
+                        id="main-content"
+                        className="flex-1 px-4 sm:px-6 lg:px-8 py-6"
+                        tabIndex={-1}
+                        role="main"
+                        aria-label="Main content"
+                    >
+                        {showBreadcrumb && (
+                            <nav aria-label="Breadcrumb" className="mb-6">
+                                <Breadcrumb />
+                            </nav>
+                        )}
+                        {children}
+                    </main>
+                </SidebarInset>
+            </div>
+        </SidebarProvider>
     );
 };

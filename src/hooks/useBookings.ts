@@ -3,10 +3,13 @@ import { useEffect, useState } from 'react';
 import { bookingQueries } from '@/lib/queries';
 import { NotificationService } from '@/lib/notificationService';
 import { useAuth } from '@/hooks/useAuth';
+import { useNetworkStatus } from '@/components/shared/NetworkStatusProvider';
+import { useLoadingState } from '@/hooks/useLoadingState';
+import { toast } from '@/hooks/use-toast';
 import type { BookingWithRelations, BookingFormData } from '@/types/booking';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-// Query keys
+// Query keys with better cache invalidation structure
 export const bookingKeys = {
     all: ['bookings'] as const,
     lists: () => [...bookingKeys.all, 'list'] as const,
@@ -17,9 +20,14 @@ export const bookingKeys = {
     room: (roomId: string) => [...bookingKeys.all, 'room', roomId] as const,
     conflicts: (roomId: string, startTime: string, endTime: string) =>
         [...bookingKeys.all, 'conflicts', roomId, startTime, endTime] as const,
+    // Add pagination-specific keys
+    paginated: (filters: any) => [...bookingKeys.lists(), 'paginated', { filters }] as const,
+    // Add analytics keys for better caching
+    analytics: () => [...bookingKeys.all, 'analytics'] as const,
+    trends: (period: string) => [...bookingKeys.analytics(), 'trends', period] as const,
 };
 
-// Hook to get bookings with filtering
+// Hook to get bookings with filtering and pagination
 export const useBookings = (filters?: {
     userId?: string;
     roomId?: string;
@@ -28,11 +36,50 @@ export const useBookings = (filters?: {
     endDate?: string;
     limit?: number;
     offset?: number;
+    includeCount?: boolean;
 }) => {
+    const { isOffline } = useNetworkStatus();
+
     return useQuery({
         queryKey: bookingKeys.list(filters),
         queryFn: () => bookingQueries.getAll(filters),
         staleTime: 2 * 60 * 1000, // 2 minutes
+        enabled: !isOffline, // Disable when offline
+        retry: (failureCount, error) => {
+            // Don't retry if offline
+            if (!navigator.onLine) return false;
+            // Retry up to 3 times for network errors
+            return failureCount < 3;
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    });
+};
+
+// Hook to get bookings with pagination support and optimized caching
+export const useBookingsPaginated = (filters?: {
+    userId?: string;
+    roomId?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+}) => {
+    const { isOffline } = useNetworkStatus();
+
+    return useQuery({
+        queryKey: bookingKeys.paginated(filters),
+        queryFn: () => bookingQueries.getAll({ ...filters, includeCount: true }),
+        staleTime: 1 * 60 * 1000, // 1 minute for paginated data (more dynamic)
+        gcTime: 5 * 60 * 1000, // 5 minutes cache time
+        enabled: !isOffline,
+        retry: (failureCount, error) => {
+            if (!navigator.onLine) return false;
+            return failureCount < 3;
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        // Keep previous data while fetching new page
+        placeholderData: (previousData) => previousData,
     });
 };
 
@@ -133,11 +180,32 @@ export const useBookingsRealtime = (filters?: { roomId?: string; userId?: string
 // Mutation hooks for booking management
 export const useCreateBooking = () => {
     const queryClient = useQueryClient();
+    const { isOffline } = useNetworkStatus();
+    const loadingState = useLoadingState({
+        initialText: 'Creating booking...',
+        stages: ['Validating availability', 'Creating booking', 'Sending notifications']
+    });
 
     return useMutation({
-        mutationFn: (booking: BookingFormData & { user_id: string }) =>
-            bookingQueries.create(booking),
+        mutationFn: async (booking: BookingFormData & { user_id: string }) => {
+            if (isOffline) {
+                throw new Error('Cannot create booking while offline. Please check your connection.');
+            }
+
+            loadingState.startLoading();
+            loadingState.updateStage(0);
+
+            try {
+                const result = await bookingQueries.create(booking);
+                loadingState.updateStage(1);
+                return result;
+            } finally {
+                loadingState.stopLoading();
+            }
+        },
         onSuccess: async (data) => {
+            loadingState.updateStage(2);
+
             // Invalidate queries
             queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
             queryClient.invalidateQueries({ queryKey: bookingKeys.user(data.user_id) });
@@ -148,8 +216,44 @@ export const useCreateBooking = () => {
                 await NotificationService.createBookingConfirmedNotification(data);
             } catch (error) {
                 console.error('Failed to create booking confirmation notification:', error);
+                // Don't fail the mutation for notification errors
+                toast({
+                    title: 'Booking Created',
+                    description: 'Your booking was created successfully, but we couldn\'t send the confirmation notification.',
+                    variant: 'default',
+                });
+            }
+
+            toast({
+                title: 'Booking Created',
+                description: `Your booking for ${data.room?.name} has been confirmed.`,
+            });
+        },
+        onError: (error: any) => {
+            console.error('Booking creation failed:', error);
+
+            // Handle specific error types
+            if (error.message?.includes('conflict')) {
+                toast({
+                    title: 'Booking Conflict',
+                    description: 'This time slot is no longer available. Please select a different time.',
+                    variant: 'destructive',
+                });
+            } else if (isOffline) {
+                toast({
+                    title: 'Offline',
+                    description: 'Cannot create booking while offline. Please check your connection.',
+                    variant: 'destructive',
+                });
+            } else {
+                toast({
+                    title: 'Booking Failed',
+                    description: error.message || 'Failed to create booking. Please try again.',
+                    variant: 'destructive',
+                });
             }
         },
+        retry: false, // Don't auto-retry booking creation
     });
 };
 

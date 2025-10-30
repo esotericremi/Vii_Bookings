@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar, Grid, List, Clock, Users, MapPin, Plus, Filter, Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,8 @@ interface DashboardFilters {
 const Dashboard: React.FC = () => {
     const { userProfile } = useAuth();
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+
+    usePageTitle('Dashboard - VII Bookings');
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
     const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ start: string; end: string } | null>(null);

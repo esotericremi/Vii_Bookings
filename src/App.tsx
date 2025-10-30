@@ -2,87 +2,41 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RealTimeSyncProvider } from "@/components/shared/RealTimeSyncProvider";
+import { AppRouter } from "@/components/routing/AppRouter";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { NetworkStatusProvider } from "@/components/shared/NetworkStatusProvider";
+import { AppStateProvider } from "@/components/shared/AppStateProvider";
+import { NetworkStatusBanner, FloatingNetworkStatus } from "@/components/shared/NetworkStatusBanner";
+import { createQueryClient } from "@/lib/queryClient";
 import "@/utils/supabaseCheck"; // Make health check available in console
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
-import { RoomSelection } from "./pages/RoomSelection";
-import { Login } from "./pages/auth/Login";
-import { Register } from "./pages/auth/Register";
-import { Unauthorized } from "./pages/auth/Unauthorized";
-import AdminBookings from "./pages/admin/AdminBookings";
-import Settings from "./pages/admin/Settings";
+import "@/lib/errorHandling"; // Initialize global error handling
 
-const queryClient = new QueryClient();
+const queryClient = createQueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <RealTimeSyncProvider enableToasts={true} enableAdminNotifications={true}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/unauthorized" element={<Unauthorized />} />
-
-              {/* Protected routes */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/rooms"
-                element={
-                  <ProtectedRoute>
-                    <RoomSelection />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/bookings"
-                element={
-                  <ProtectedRoute>
-                    <AdminBookings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </RealTimeSyncProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <ErrorBoundary level="global" showDetails={process.env.NODE_ENV === 'development'}>
+    <QueryClientProvider client={queryClient}>
+      <NetworkStatusProvider>
+        <AppStateProvider>
+          <AuthProvider>
+            <RealTimeSyncProvider enableToasts={true} enableAdminNotifications={true}>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AppRouter />
+                  <FloatingNetworkStatus position="bottom-right" />
+                </BrowserRouter>
+              </TooltipProvider>
+            </RealTimeSyncProvider>
+          </AuthProvider>
+        </AppStateProvider>
+      </NetworkStatusProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

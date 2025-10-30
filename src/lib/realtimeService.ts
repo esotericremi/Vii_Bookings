@@ -14,6 +14,8 @@ export class RealtimeService {
     private static subscriptions = new Map<string, RealtimeSubscription>();
     private static connectionListeners = new Set<(status: ConnectionStatus) => void>();
     private static globalStatus: ConnectionStatus = 'disconnected';
+    private static lastConnectionAttempt = new Map<string, number>();
+    private static readonly MIN_RECONNECT_DELAY = 1000; // 1 second minimum between reconnection attempts
 
     /**
      * Subscribe to room availability updates
@@ -707,6 +709,26 @@ export class RealtimeService {
         const subscriptionId = 'global-room-sync';
         const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+        // Check if subscription already exists and is connected
+        const existingSubscription = this.subscriptions.get(subscriptionId);
+        if (existingSubscription && existingSubscription.status === 'connected') {
+            console.log('Global room sync already connected, reusing existing subscription');
+            return subscriptionId;
+        }
+
+        // Check if we're reconnecting too frequently
+        const lastAttempt = this.lastConnectionAttempt.get(subscriptionId) || 0;
+        const now = Date.now();
+        if (now - lastAttempt < this.MIN_RECONNECT_DELAY) {
+            console.log(`Throttling reconnection attempt for ${subscriptionId}, waiting...`);
+            setTimeout(() => {
+                this.subscribeToGlobalRoomSync(callback);
+            }, this.MIN_RECONNECT_DELAY - (now - lastAttempt));
+            return subscriptionId;
+        }
+
+        this.lastConnectionAttempt.set(subscriptionId, now);
+
         // Remove existing subscription if any
         this.unsubscribe(subscriptionId);
 
@@ -788,7 +810,22 @@ export class RealtimeService {
                                 status === 'CLOSED' ? 'disconnected' : 'connecting';
 
                 this.updateSubscriptionStatus(subscriptionId, connectionStatus);
-                console.log(`Global room sync subscription status:`, status);
+
+                // Only log status changes, not every status update
+                const currentSubscription = this.subscriptions.get(subscriptionId);
+                if (!currentSubscription || currentSubscription.status !== connectionStatus) {
+                    console.log(`Global room sync subscription status:`, status);
+                }
+
+                // Add reconnection delay for closed connections to prevent rapid cycling
+                if (status === 'CLOSED') {
+                    setTimeout(() => {
+                        const subscription = this.subscriptions.get(subscriptionId);
+                        if (subscription && subscription.status === 'disconnected') {
+                            console.log('Attempting to reconnect global room sync after delay...');
+                        }
+                    }, 2000); // 2 second delay before attempting reconnection
+                }
             });
 
         this.subscriptions.set(subscriptionId, {

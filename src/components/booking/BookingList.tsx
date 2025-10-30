@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, isAfter, isBefore, startOfDay } from "date-fns";
-import { Calendar, Clock, Users, Edit, Trash2, Download, Filter, Search } from "lucide-react";
+import { Calendar, Clock, Users, Edit, Trash2, Download, Filter, Search, RefreshCw, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,11 @@ import { BookingWithRelations } from "@/types/booking";
 import { useUserBookings, useCancelBooking } from "@/hooks/useBookings";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { LoadingSpinner, LoadingSkeleton } from "@/components/shared/LoadingSpinner";
+import { ErrorDisplay } from "@/components/shared/ErrorDisplay";
+import { useNetworkStatus } from "@/components/shared/NetworkStatusProvider";
+import { useAsyncState } from "@/components/shared/AppStateProvider";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 
 interface BookingListProps {
     onEditBooking?: (booking: BookingWithRelations) => void;
@@ -20,12 +25,17 @@ interface BookingListProps {
 
 export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProps) => {
     const { user } = useAuth();
+    const { isOffline } = useNetworkStatus();
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "past" | "cancelled">("all");
     const [sortBy, setSortBy] = useState<"date" | "title" | "room">("date");
 
-    const { data: allBookings, isLoading } = useUserBookings(user?.id || "");
+    const { data: allBookings, isLoading, error, refetch } = useUserBookings(user?.id || "");
     const cancelBookingMutation = useCancelBooking();
+
+    // Enhanced state management for cancel operations
+    const cancelState = useAsyncState('cancel-booking');
+    const exportState = useAsyncState('export-calendar');
 
     // Filter and sort bookings
     const filteredBookings = allBookings?.filter((booking) => {
@@ -71,31 +81,42 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
         }
     });
 
-    const handleCancelBooking = async (bookingId: string) => {
-        try {
-            await cancelBookingMutation.mutateAsync(bookingId);
-            toast.success("Booking cancelled successfully");
-        } catch (error) {
-            toast.error("Failed to cancel booking");
-        }
+    const handleCancelBooking = async (bookingId: string, bookingTitle: string) => {
+        await cancelState.execute(
+            () => cancelBookingMutation.mutateAsync(bookingId),
+            {
+                showSuccessToast: true,
+                successMessage: `"${bookingTitle}" has been cancelled successfully`,
+                showErrorToast: true,
+            }
+        );
     };
 
-    const handleExportCalendar = () => {
-        if (onExportCalendar) {
-            onExportCalendar(sortedBookings);
-        } else {
-            // Default export functionality
-            const calendarData = sortedBookings.map(booking => ({
-                title: booking.title,
-                start: booking.start_time,
-                end: booking.end_time,
-                location: booking.room?.name,
-                description: booking.description
-            }));
+    const handleExportCalendar = async () => {
+        await exportState.execute(
+            async () => {
+                if (onExportCalendar) {
+                    onExportCalendar(sortedBookings);
+                } else {
+                    // Default export functionality
+                    const calendarData = sortedBookings.map(booking => ({
+                        title: booking.title,
+                        start: booking.start_time,
+                        end: booking.end_time,
+                        location: booking.room?.name,
+                        description: booking.description
+                    }));
 
-            const icsContent = generateICSContent(calendarData);
-            downloadICSFile(icsContent, "my-bookings.ics");
-        }
+                    const icsContent = generateICSContent(calendarData);
+                    downloadICSFile(icsContent, "my-bookings.ics");
+                }
+            },
+            {
+                showSuccessToast: true,
+                successMessage: "Calendar exported successfully",
+                showErrorToast: true,
+            }
+        );
     };
 
     const generateICSContent = (bookings: any[]) => {
@@ -158,192 +179,280 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
         }
     };
 
+    // Enhanced loading state
     if (isLoading) {
         return (
             <Card>
-                <CardContent className="p-6">
-                    <div className="flex items-center justify-center h-32">
-                        <Clock className="h-6 w-6 animate-spin mr-2" />
-                        Loading bookings...
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <LoadingSkeleton variant="text" lines={1} className="w-32" />
+                        <LoadingSkeleton variant="button" />
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {/* Filter skeleton */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <LoadingSkeleton variant="text" lines={1} className="flex-1 h-10" />
+                        <LoadingSkeleton variant="button" className="w-[180px]" />
+                        <LoadingSkeleton variant="button" className="w-[140px]" />
+                    </div>
+
+                    {/* Booking cards skeleton */}
+                    <div className="space-y-4">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <Card key={i}>
+                                <CardContent className="p-4">
+                                    <LoadingSkeleton variant="card" />
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
                 </CardContent>
             </Card>
         );
     }
 
-    return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
+    // Enhanced error state
+    if (error) {
+        return (
+            <Card>
+                <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Calendar className="h-5 w-5" />
                         My Bookings
                     </CardTitle>
-                    <Button onClick={handleExportCalendar} variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-2" />
-                        Export Calendar
-                    </Button>
-                </div>
-            </CardHeader>
+                </CardHeader>
+                <CardContent>
+                    <ErrorDisplay
+                        error={error}
+                        onRetry={refetch}
+                        variant="card"
+                        title="Failed to load bookings"
+                        retryable={!isOffline}
+                    />
+                </CardContent>
+            </Card>
+        );
+    }
 
-            <CardContent className="space-y-6">
-                {/* Filters and Search */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search bookings..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
-                            />
+    return (
+        <ErrorBoundary level="component">
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5" />
+                            My Bookings
+                            {isOffline && (
+                                <Badge variant="outline" className="text-xs">
+                                    <AlertTriangle className="h-3 w-3 mr-1" />
+                                    Offline
+                                </Badge>
+                            )}
+                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                            {error && (
+                                <Button
+                                    onClick={() => refetch()}
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={isLoading}
+                                >
+                                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                                    Retry
+                                </Button>
+                            )}
+                            <Button
+                                onClick={handleExportCalendar}
+                                variant="outline"
+                                size="sm"
+                                disabled={exportState.isLoading || isOffline || !sortedBookings.length}
+                            >
+                                {exportState.isLoading ? (
+                                    <LoadingSpinner size="sm" className="mr-2" />
+                                ) : (
+                                    <Download className="h-4 w-4 mr-2" />
+                                )}
+                                Export Calendar
+                            </Button>
                         </div>
                     </div>
+                </CardHeader>
 
-                    <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-                        <SelectTrigger className="w-[180px]">
-                            <Filter className="h-4 w-4 mr-2" />
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Bookings</SelectItem>
-                            <SelectItem value="upcoming">Upcoming</SelectItem>
-                            <SelectItem value="past">Past</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="date">Sort by Date</SelectItem>
-                            <SelectItem value="title">Sort by Title</SelectItem>
-                            <SelectItem value="room">Sort by Room</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Booking Tabs */}
-                <Tabs value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-                    <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="all">All</TabsTrigger>
-                        <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                        <TabsTrigger value="past">Past</TabsTrigger>
-                        <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value={statusFilter} className="mt-6">
-                        {sortedBookings.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                <p>No bookings found</p>
-                                {searchTerm && (
-                                    <p className="text-sm mt-2">Try adjusting your search or filters</p>
-                                )}
+                <CardContent className="space-y-6">
+                    {/* Filters and Search */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search bookings..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10"
+                                />
                             </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {sortedBookings.map((booking) => {
-                                    const status = getBookingStatus(booking);
-                                    const canEdit = status === "upcoming" && booking.status === "confirmed";
-                                    const canCancel = status === "upcoming" && booking.status === "confirmed";
+                        </div>
 
-                                    return (
-                                        <Card key={booking.id} className="hover:shadow-md transition-shadow">
-                                            <CardContent className="p-4">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <h3 className="font-semibold">{booking.title}</h3>
-                                                            <Badge variant={getStatusBadgeVariant(status)}>
-                                                                {status}
-                                                            </Badge>
-                                                        </div>
+                        <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+                            <SelectTrigger className="w-[180px]">
+                                <Filter className="h-4 w-4 mr-2" />
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Bookings</SelectItem>
+                                <SelectItem value="upcoming">Upcoming</SelectItem>
+                                <SelectItem value="past">Past</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                        </Select>
 
-                                                        <div className="space-y-1 text-sm text-muted-foreground">
-                                                            <div className="flex items-center gap-2">
-                                                                <Calendar className="h-4 w-4" />
-                                                                <span>
-                                                                    {format(new Date(booking.start_time), "MMM dd, yyyy")}
-                                                                </span>
+                        <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                            <SelectTrigger className="w-[140px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="date">Sort by Date</SelectItem>
+                                <SelectItem value="title">Sort by Title</SelectItem>
+                                <SelectItem value="room">Sort by Room</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Booking Tabs */}
+                    <Tabs value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+                        <TabsList className="grid w-full grid-cols-4">
+                            <TabsTrigger value="all">All</TabsTrigger>
+                            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                            <TabsTrigger value="past">Past</TabsTrigger>
+                            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value={statusFilter} className="mt-6">
+                            {sortedBookings.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                    <p>No bookings found</p>
+                                    {searchTerm && (
+                                        <p className="text-sm mt-2">Try adjusting your search or filters</p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {sortedBookings.map((booking) => {
+                                        const status = getBookingStatus(booking);
+                                        const canEdit = status === "upcoming" && booking.status === "confirmed";
+                                        const canCancel = status === "upcoming" && booking.status === "confirmed";
+
+                                        return (
+                                            <Card key={booking.id} className="hover:shadow-md transition-shadow">
+                                                <CardContent className="p-4">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <h3 className="font-semibold">{booking.title}</h3>
+                                                                <Badge variant={getStatusBadgeVariant(status)}>
+                                                                    {status}
+                                                                </Badge>
                                                             </div>
 
-                                                            <div className="flex items-center gap-2">
-                                                                <Clock className="h-4 w-4" />
-                                                                <span>
-                                                                    {format(new Date(booking.start_time), "h:mm a")} - {format(new Date(booking.end_time), "h:mm a")}
-                                                                </span>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2">
-                                                                <Users className="h-4 w-4" />
-                                                                <span>{booking.room?.name} (Floor {booking.room?.floor})</span>
-                                                            </div>
-
-                                                            {booking.description && (
-                                                                <p className="mt-2 text-sm">{booking.description}</p>
-                                                            )}
-
-                                                            {booking.attendees && booking.attendees.length > 0 && (
-                                                                <div className="mt-2">
-                                                                    <span className="text-xs font-medium">Attendees: </span>
-                                                                    <span className="text-xs">{booking.attendees.join(", ")}</span>
+                                                            <div className="space-y-1 text-sm text-muted-foreground">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Calendar className="h-4 w-4" />
+                                                                    <span>
+                                                                        {format(new Date(booking.start_time), "MMM dd, yyyy")}
+                                                                    </span>
                                                                 </div>
+
+                                                                <div className="flex items-center gap-2">
+                                                                    <Clock className="h-4 w-4" />
+                                                                    <span>
+                                                                        {format(new Date(booking.start_time), "h:mm a")} - {format(new Date(booking.end_time), "h:mm a")}
+                                                                    </span>
+                                                                </div>
+
+                                                                <div className="flex items-center gap-2">
+                                                                    <Users className="h-4 w-4" />
+                                                                    <span>{booking.room?.name} (Floor {booking.room?.floor})</span>
+                                                                </div>
+
+                                                                {booking.description && (
+                                                                    <p className="mt-2 text-sm">{booking.description}</p>
+                                                                )}
+
+                                                                {booking.attendees && booking.attendees.length > 0 && (
+                                                                    <div className="mt-2">
+                                                                        <span className="text-xs font-medium">Attendees: </span>
+                                                                        <span className="text-xs">{booking.attendees.join(", ")}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-2 ml-4">
+                                                            {canEdit && onEditBooking && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => onEditBooking(booking)}
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+
+                                                            {canCancel && (
+                                                                <AlertDialog>
+                                                                    <AlertDialogTrigger asChild>
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            disabled={cancelState.isLoading || isOffline}
+                                                                        >
+                                                                            {cancelState.isLoading ? (
+                                                                                <LoadingSpinner size="sm" />
+                                                                            ) : (
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            )}
+                                                                        </Button>
+                                                                    </AlertDialogTrigger>
+                                                                    <AlertDialogContent>
+                                                                        <AlertDialogHeader>
+                                                                            <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+                                                                            <AlertDialogDescription>
+                                                                                Are you sure you want to cancel "{booking.title}"? This action cannot be undone.
+                                                                                {isOffline && (
+                                                                                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm">
+                                                                                        <AlertTriangle className="h-4 w-4 inline mr-1" />
+                                                                                        You are currently offline. This action cannot be performed.
+                                                                                    </div>
+                                                                                )}
+                                                                            </AlertDialogDescription>
+                                                                        </AlertDialogHeader>
+                                                                        <AlertDialogFooter>
+                                                                            <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+                                                                            <AlertDialogAction
+                                                                                onClick={() => handleCancelBooking(booking.id, booking.title)}
+                                                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                                                disabled={isOffline}
+                                                                            >
+                                                                                {isOffline ? 'Cannot Cancel (Offline)' : 'Cancel Booking'}
+                                                                            </AlertDialogAction>
+                                                                        </AlertDialogFooter>
+                                                                    </AlertDialogContent>
+                                                                </AlertDialog>
                                                             )}
                                                         </div>
                                                     </div>
-
-                                                    <div className="flex items-center gap-2 ml-4">
-                                                        {canEdit && onEditBooking && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => onEditBooking(booking)}
-                                                            >
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-
-                                                        {canCancel && (
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="outline" size="sm">
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            Are you sure you want to cancel "{booking.title}"? This action cannot be undone.
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Keep Booking</AlertDialogCancel>
-                                                                        <AlertDialogAction
-                                                                            onClick={() => handleCancelBooking(booking.id)}
-                                                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                                        >
-                                                                            Cancel Booking
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </TabsContent>
-                </Tabs>
-            </CardContent>
-        </Card>
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
+        </ErrorBoundary>
     );
 };

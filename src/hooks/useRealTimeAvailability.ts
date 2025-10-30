@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { RealtimeService, type ConnectionStatus } from '@/lib/realtimeService';
 import { roomQueries, bookingQueries } from '@/lib/queries';
@@ -233,6 +233,10 @@ export const useGlobalRoomAvailability = (options: {
         type: 'booking' | 'room';
     }>>([]);
 
+    // Use refs to prevent unnecessary re-subscriptions
+    const subscriptionIdRef = useRef<string | null>(null);
+    const isSubscribingRef = useRef(false);
+
     const { onAvailabilityChange, autoReconnect = true } = options;
 
     // Handle global availability updates
@@ -272,14 +276,29 @@ export const useGlobalRoomAvailability = (options: {
         }
     }, [queryClient, onAvailabilityChange]);
 
-    // Subscribe to global updates
+    // Subscribe to global updates with stability improvements
     useEffect(() => {
-        const id = RealtimeService.subscribeToGlobalRoomAvailability(handleGlobalUpdate);
-        setSubscriptionId(id);
+        // Prevent multiple simultaneous subscription attempts
+        if (isSubscribingRef.current) {
+            return;
+        }
+
+        isSubscribingRef.current = true;
+
+        // Add a small delay to prevent rapid re-subscriptions
+        const timeoutId = setTimeout(() => {
+            const id = RealtimeService.subscribeToGlobalRoomAvailability(handleGlobalUpdate);
+            setSubscriptionId(id);
+            subscriptionIdRef.current = id;
+            isSubscribingRef.current = false;
+        }, 200);
 
         return () => {
-            if (id) {
-                RealtimeService.unsubscribe(id);
+            clearTimeout(timeoutId);
+            isSubscribingRef.current = false;
+            if (subscriptionIdRef.current) {
+                RealtimeService.unsubscribe(subscriptionIdRef.current);
+                subscriptionIdRef.current = null;
             }
         };
     }, [handleGlobalUpdate]);
@@ -559,14 +578,20 @@ export const useEnhancedGlobalRoomSync = (options: {
         }
     }, [queryClient, onAvailabilityChange, onRealTimeUpdate]);
 
-    // Subscribe to enhanced global sync
+    // Subscribe to enhanced global sync with debouncing to prevent rapid reconnections
     useEffect(() => {
-        const id = RealtimeService.subscribeToGlobalRoomSync(handleGlobalSyncUpdate);
-        setSubscriptionId(id);
+        let currentSubscriptionId: string | null = null;
+
+        // Add a small delay to prevent rapid subscription changes
+        const timeoutId = setTimeout(() => {
+            currentSubscriptionId = RealtimeService.subscribeToGlobalRoomSync(handleGlobalSyncUpdate);
+            setSubscriptionId(currentSubscriptionId);
+        }, 100);
 
         return () => {
-            if (id) {
-                RealtimeService.unsubscribe(id);
+            clearTimeout(timeoutId);
+            if (currentSubscriptionId) {
+                RealtimeService.unsubscribe(currentSubscriptionId);
             }
         };
     }, [handleGlobalSyncUpdate]);
