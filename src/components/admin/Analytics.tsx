@@ -96,7 +96,7 @@ export const Analytics: React.FC = () => {
     }
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -166,11 +166,19 @@ export const Analytics: React.FC = () => {
             ) : (
                 <>
                     {/* Summary Cards */}
-                    {summaryData && (
+                    {summaryData ? (
                         <AnalyticsSummaryCards
                             summary={summaryData}
                             isLoading={isLoading}
                         />
+                    ) : !isLoading && (
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="text-center text-muted-foreground">
+                                    <p>No summary data available. Create some rooms and bookings to see analytics.</p>
+                                </div>
+                            </CardContent>
+                        </Card>
                     )}
 
                     {/* Charts Section */}

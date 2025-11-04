@@ -30,66 +30,75 @@ export const AnalyticsSummaryCards: React.FC<AnalyticsSummaryCardsProps> = ({
     summary,
     isLoading
 }) => {
+    // Helper function to safely format numbers
+    const safeNumber = (value: number) => {
+        return isNaN(value) || !isFinite(value) ? 0 : value;
+    };
+
+    const safeString = (value: string) => {
+        return value && value !== 'N/A' ? value : 'No data';
+    };
+
     const cards = [
         {
             title: 'Total Bookings',
-            value: summary.totalBookings.toLocaleString(),
+            value: safeNumber(summary.totalBookings).toLocaleString(),
             icon: CalendarIcon,
             description: 'Total bookings in period',
             color: 'text-blue-600'
         },
         {
             title: 'Utilization Rate',
-            value: `${summary.utilizationRate}%`,
+            value: `${safeNumber(summary.utilizationRate)}%`,
             icon: TrendingUpIcon,
             description: 'Confirmed vs total bookings',
             color: 'text-green-600'
         },
         {
             title: 'Cancellation Rate',
-            value: `${summary.cancellationRate}%`,
+            value: `${safeNumber(summary.cancellationRate)}%`,
             icon: XCircleIcon,
             description: 'Cancelled bookings rate',
             color: 'text-red-600'
         },
         {
             title: 'Avg Duration',
-            value: `${summary.averageBookingDuration}h`,
+            value: `${safeNumber(summary.averageBookingDuration)}h`,
             icon: ClockIcon,
             description: 'Average booking length',
             color: 'text-purple-600'
         },
         {
             title: 'Room Utilization',
-            value: `${summary.overallRoomUtilization}%`,
+            value: `${safeNumber(summary.overallRoomUtilization)}%`,
             icon: BuildingIcon,
             description: 'Overall room usage',
             color: 'text-orange-600'
         },
         {
             title: 'Busiest Day',
-            value: summary.busiestDay,
+            value: safeString(summary.busiestDay),
             icon: BarChart3Icon,
             description: 'Most active day of week',
             color: 'text-indigo-600'
         },
         {
             title: 'Popular Room',
-            value: summary.mostPopularRoom,
+            value: safeString(summary.mostPopularRoom),
             icon: StarIcon,
             description: 'Most booked room',
             color: 'text-yellow-600'
         },
         {
             title: 'Active Department',
-            value: summary.mostActiveDepartment,
+            value: safeString(summary.mostActiveDepartment),
             icon: UsersIcon,
             description: 'Most bookings by dept',
             color: 'text-teal-600'
         },
         {
             title: 'Peak Hour',
-            value: summary.peakHour,
+            value: safeString(summary.peakHour),
             icon: ClockIcon,
             description: 'Busiest booking time',
             color: 'text-pink-600'

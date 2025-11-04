@@ -1002,13 +1002,15 @@ export const analyticsQueries = {
             }))
             .sort((a, b) => b.booking_count - a.booking_count);
 
+        const utilizationRate = totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : 0;
+
         return {
-            total_bookings: totalBookings,
-            confirmed_bookings: confirmedBookings,
-            cancelled_bookings: cancelledBookings,
-            utilization_rate: totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : 0,
-            peak_hours: peakHoursArray,
-            popular_rooms: popularRoomsArray
+            total_bookings: totalBookings || 0,
+            confirmed_bookings: confirmedBookings || 0,
+            cancelled_bookings: cancelledBookings || 0,
+            utilization_rate: isNaN(utilizationRate) ? 0 : Math.round(utilizationRate * 100) / 100,
+            peak_hours: peakHoursArray || [],
+            popular_rooms: popularRoomsArray || []
         };
     },
 
@@ -1072,13 +1074,19 @@ export const analyticsQueries = {
         const workingDays = Math.floor(daysDiff * 5 / 7); // Approximate working days
         const totalAvailableHours = workingDays * 8; // 8 hours per working day
 
-        return Object.values(roomUtilization).map(room => ({
-            ...room,
-            total_hours_available: totalAvailableHours,
-            utilization_percentage: totalAvailableHours > 0
+        return Object.values(roomUtilization).map(room => {
+            const utilizationPercentage = totalAvailableHours > 0
                 ? (room.total_hours_booked / totalAvailableHours) * 100
-                : 0
-        }));
+                : 0;
+
+            return {
+                ...room,
+                total_hours_available: totalAvailableHours || 0,
+                total_hours_booked: isNaN(room.total_hours_booked) ? 0 : room.total_hours_booked,
+                booking_count: isNaN(room.booking_count) ? 0 : room.booking_count,
+                utilization_percentage: isNaN(utilizationPercentage) ? 0 : Math.round(utilizationPercentage * 100) / 100
+            };
+        });
     },
 
     // Get booking trends over time
@@ -1167,7 +1175,11 @@ export const analyticsQueries = {
         });
 
         return Object.entries(departmentStats)
-            .map(([department, stats]) => ({ department, ...stats }))
+            .map(([department, stats]) => ({
+                department,
+                booking_count: isNaN(stats.booking_count) ? 0 : stats.booking_count,
+                total_hours: isNaN(stats.total_hours) ? 0 : Math.round(stats.total_hours * 100) / 100
+            }))
             .sort((a, b) => b.booking_count - a.booking_count);
     }
 };

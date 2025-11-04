@@ -10,14 +10,18 @@ import type {
 
 // Calculate utilization rate with proper handling of edge cases
 export const calculateUtilizationRate = (confirmed: number, total: number): number => {
-    if (total === 0) return 0;
-    return Math.round((confirmed / total) * 100 * 100) / 100; // Round to 2 decimal places
+    if (!confirmed || !total || total === 0 || isNaN(confirmed) || isNaN(total)) return 0;
+    const rate = (confirmed / total) * 100;
+    return isNaN(rate) ? 0 : Math.round(rate * 100) / 100; // Round to 2 decimal places
 };
 
 // Calculate trending percentage change
 export const calculateTrendingChange = (current: number, previous: number): number => {
-    if (previous === 0) return current > 0 ? 100 : 0;
-    return Math.round(((current - previous) / previous) * 100 * 100) / 100;
+    if (!current || !previous || isNaN(current) || isNaN(previous) || previous === 0) {
+        return current > 0 ? 100 : 0;
+    }
+    const change = ((current - previous) / previous) * 100;
+    return isNaN(change) ? 0 : Math.round(change * 100) / 100;
 };
 
 // Format peak hours data for display
@@ -49,11 +53,21 @@ export const getTopRooms = (
 export const calculateAverageBookingDuration = (
     utilization: RoomUtilizationData[]
 ): number => {
-    const totalHours = utilization.reduce((sum, room) => sum + room.total_hours_booked, 0);
-    const totalBookings = utilization.reduce((sum, room) => sum + room.booking_count, 0);
+    if (!utilization || utilization.length === 0) return 0;
 
-    if (totalBookings === 0) return 0;
-    return Math.round((totalHours / totalBookings) * 100) / 100;
+    const totalHours = utilization.reduce((sum, room) => {
+        const hours = room.total_hours_booked || 0;
+        return sum + (isNaN(hours) ? 0 : hours);
+    }, 0);
+
+    const totalBookings = utilization.reduce((sum, room) => {
+        const bookings = room.booking_count || 0;
+        return sum + (isNaN(bookings) ? 0 : bookings);
+    }, 0);
+
+    if (totalBookings === 0 || isNaN(totalHours) || isNaN(totalBookings)) return 0;
+    const average = totalHours / totalBookings;
+    return isNaN(average) ? 0 : Math.round(average * 100) / 100;
 };
 
 // Get busiest day of week from trends data
@@ -89,8 +103,15 @@ export const getBusiestDayOfWeek = (trends: BookingTrendData[]): {
 
 // Calculate cancellation rate
 export const calculateCancellationRate = (analytics: BookingAnalytics): number => {
-    if (analytics.total_bookings === 0) return 0;
-    return Math.round((analytics.cancelled_bookings / analytics.total_bookings) * 100 * 100) / 100;
+    if (!analytics || !analytics.total_bookings || analytics.total_bookings === 0) return 0;
+
+    const cancelled = analytics.cancelled_bookings || 0;
+    const total = analytics.total_bookings || 0;
+
+    if (isNaN(cancelled) || isNaN(total) || total === 0) return 0;
+
+    const rate = (cancelled / total) * 100;
+    return isNaN(rate) ? 0 : Math.round(rate * 100) / 100;
 };
 
 // Get department efficiency (bookings per hour)
