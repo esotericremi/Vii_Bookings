@@ -167,17 +167,8 @@ export const Analytics: React.FC = () => {
                 <>
                     {/* Summary Cards */}
                     <div className="mb-6">
-                        <h3 className="text-lg font-semibold mb-4">Summary Cards Debug</h3>
-                        <p className="text-sm text-muted-foreground mb-2">
-                            Summary data exists: {summaryData ? 'Yes' : 'No'}
-                        </p>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Is loading: {isLoading ? 'Yes' : 'No'}
-                        </p>
-
                         {summaryData ? (
-                            <div>
-                                <p className="text-green-600 mb-2">✓ Rendering AnalyticsSummaryCards component</p>
+                            <div>                                
                                 <AnalyticsSummaryCards
                                     summary={summaryData}
                                     isLoading={isLoading}
