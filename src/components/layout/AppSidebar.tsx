@@ -147,10 +147,7 @@ export const AppSidebar: React.FC = () => {
         item.roles.includes(userProfile?.role || 'staff')
     );
 
-    // Debug logging for admin access
-    console.log('AppSidebar - User Profile:', userProfile);
-    console.log('AppSidebar - User Role:', userProfile?.role);
-    console.log('AppSidebar - Visible Admin Items:', visibleAdminItems.length);
+
 
     return (
         <Sidebar>

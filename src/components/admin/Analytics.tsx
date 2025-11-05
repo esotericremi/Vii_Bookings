@@ -166,20 +166,35 @@ export const Analytics: React.FC = () => {
             ) : (
                 <>
                     {/* Summary Cards */}
-                    {summaryData ? (
-                        <AnalyticsSummaryCards
-                            summary={summaryData}
-                            isLoading={isLoading}
-                        />
-                    ) : !isLoading && (
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="text-center text-muted-foreground">
-                                    <p>No summary data available. Create some rooms and bookings to see analytics.</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                    <div className="mb-6">
+                        <h3 className="text-lg font-semibold mb-4">Summary Cards Debug</h3>
+                        <p className="text-sm text-muted-foreground mb-2">
+                            Summary data exists: {summaryData ? 'Yes' : 'No'}
+                        </p>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Is loading: {isLoading ? 'Yes' : 'No'}
+                        </p>
+
+                        {summaryData ? (
+                            <div>
+                                <p className="text-green-600 mb-2">✓ Rendering AnalyticsSummaryCards component</p>
+                                <AnalyticsSummaryCards
+                                    summary={summaryData}
+                                    isLoading={isLoading}
+                                />
+                            </div>
+                        ) : !isLoading ? (
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <div className="text-center text-muted-foreground">
+                                        <p>No summary data available. Create some rooms and bookings to see analytics.</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="text-center">Loading summary...</div>
+                        )}
+                    </div>
 
                     {/* Charts Section */}
                     <AnalyticsCharts
@@ -197,6 +212,8 @@ export const Analytics: React.FC = () => {
                         popularRooms={bookingAnalytics.data?.popular_rooms}
                         isLoading={isLoading}
                     />
+
+
                 </>
             )}
         </div>

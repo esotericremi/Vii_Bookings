@@ -33,18 +33,7 @@ export const BookingList = ({ onEditBooking, onExportCalendar }: BookingListProp
     const { data: allBookings, isLoading, error, refetch } = useUserBookings(user?.id || "");
     const cancelBookingMutation = useCancelBooking();
 
-    // Debug logging
-    console.log('BookingList - User:', user?.id, 'Loading:', isLoading, 'Error:', error, 'Data:', allBookings);
 
-    // Add timeout for debugging
-    React.useEffect(() => {
-        if (isLoading) {
-            const timeout = setTimeout(() => {
-                console.log('BookingList - Still loading after 10 seconds, this might indicate a stuck query');
-            }, 10000);
-            return () => clearTimeout(timeout);
-        }
-    }, [isLoading]);
 
     // Enhanced state management for cancel operations
     const cancelState = useAsyncState('cancel-booking');

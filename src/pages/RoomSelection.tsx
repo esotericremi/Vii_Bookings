@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Calendar, Grid, List, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,6 +29,7 @@ export const RoomSelection = () => {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<string>('rooms');
     const [isRefreshing, setIsRefreshing] = useState(false);
     const { toast } = useToast();
 
@@ -159,86 +161,89 @@ export const RoomSelection = () => {
                 </p>
             </div>
 
-            <div className="flex flex-col xl:flex-row gap-6">
-                {/* Filters Sidebar */}
-                <div className="xl:w-80 flex-shrink-0">
-                    <Card className="sticky top-4">
-                        <CardContent className="pt-6">
-                            <RoomFilters
-                                filters={filters}
-                                onFiltersChange={setFilters}
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
+            {/* Main Content */}
+            <div className="space-y-6">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    {/* Header with all controls in one row */}
+                    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
+                        <TabsList>
+                            <TabsTrigger value="rooms">Room Selection</TabsTrigger>
+                            <TabsTrigger
+                                value="timeline"
+                                disabled={!selectedRoomId}
+                                className={selectedRoomId ? "bg-green-50 text-green-700 border-green-200" : ""}
+                            >
+                                Timeline View
+                                {selectedRoomId && (
+                                    <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800">
+                                        {rooms.find(r => r.id === selectedRoomId)?.name}
+                                    </Badge>
+                                )}
+                            </TabsTrigger>
+                        </TabsList>
 
-                {/* Main Content */}
-                <div className="flex-1 min-w-0">
-                    <Tabs defaultValue="rooms" className="w-full">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                            <TabsList>
-                                <TabsTrigger value="rooms">Room Selection</TabsTrigger>
-                                <TabsTrigger value="timeline" disabled={!selectedRoomId}>
-                                    Timeline View
-                                </TabsTrigger>
-                            </TabsList>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full lg:w-auto">
+                            {/* Date Picker */}
+                            <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 flex-shrink-0" />
+                                <input
+                                    type="date"
+                                    value={selectedDate.toISOString().split('T')[0]}
+                                    onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                                    className="px-3 py-2 border rounded-md text-sm"
+                                    min={new Date().toISOString().split('T')[0]}
+                                />
+                            </div>
 
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                                {/* Date Picker */}
-                                <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    <Calendar className="h-4 w-4 flex-shrink-0" />
-                                    <input
-                                        type="date"
-                                        value={selectedDate.toISOString().split('T')[0]}
-                                        onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                                        className="px-3 py-2 border rounded-md text-sm flex-1 sm:flex-none"
-                                        min={new Date().toISOString().split('T')[0]}
-                                    />
-                                </div>
+                            {/* Connection Status */}
+                            <CompactConnectionStatus />
 
-                                {/* Controls */}
-                                <div className="flex items-center gap-2">
-                                    {/* Connection Status */}
-                                    <CompactConnectionStatus />
+                            {/* Refresh Button */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRefresh}
+                                disabled={isRefreshing}
+                                className="flex items-center gap-2"
+                            >
+                                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                Refresh
+                            </Button>
 
-                                    {/* Refresh Button */}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleRefresh}
-                                        disabled={isRefreshing}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                        Refresh
-                                    </Button>
-
-                                    {/* View Mode Toggle */}
-                                    <div className="flex items-center border rounded-md">
-                                        <Button
-                                            variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                                            size="sm"
-                                            onClick={() => setViewMode('grid')}
-                                            className="rounded-r-none"
-                                        >
-                                            <Grid className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant={viewMode === 'list' ? 'default' : 'ghost'}
-                                            size="sm"
-                                            onClick={() => setViewMode('list')}
-                                            className="rounded-l-none"
-                                        >
-                                            <List className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
+                            {/* View Mode Toggle */}
+                            <div className="flex items-center border rounded-md">
+                                <Button
+                                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setViewMode('grid')}
+                                    className="rounded-r-none"
+                                >
+                                    <Grid className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setViewMode('list')}
+                                    className="rounded-l-none"
+                                >
+                                    <List className="h-4 w-4" />
+                                </Button>
                             </div>
                         </div>
+                    </div>
 
-                        <TabsContent value="rooms" className="space-y-6">
-                            {/* Results Summary with Real-time Info */}
-                            <div className="flex items-center justify-between">
+                    {/* Filters Row */}
+                    <div className="mb-6">
+                        <RoomFilters
+                            filters={filters}
+                            onFiltersChange={setFilters}
+                        />
+                    </div>
+
+                    <TabsContent value="rooms" className="space-y-6">
+                        {/* Results Summary with Real-time Info */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
                                 <p className="text-sm text-muted-foreground">
                                     {roomsLoading ? (
                                         <span className="flex items-center gap-2">
@@ -249,159 +254,185 @@ export const RoomSelection = () => {
                                         `${filteredRooms.length} room${filteredRooms.length !== 1 ? 's' : ''} found`
                                     )}
                                 </p>
-                                {lastUpdate && connectionStatus === 'connected' && (
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                                        <span>Live updates active</span>
-                                        {availabilityUpdates.length > 0 && (
-                                            <span>• {availabilityUpdates.length} recent changes</span>
-                                        )}
+                                {!selectedRoomId && !roomsLoading && filteredRooms.length > 0 && (
+                                    <p className="text-sm text-blue-600 font-medium">
+                                        Click "Select" on any room to view its timeline
+                                    </p>
+                                )}
+                                {selectedRoomId && (
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm text-green-600 font-medium">
+                                            ✓ {rooms.find(r => r.id === selectedRoomId)?.name} selected
+                                        </p>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setSelectedRoomId(null)}
+                                            className="text-xs h-6 px-2"
+                                        >
+                                            Clear
+                                        </Button>
                                     </div>
                                 )}
                             </div>
+                            {lastUpdate && connectionStatus === 'connected' && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                                    <span>Live updates active</span>
+                                    {availabilityUpdates.length > 0 && (
+                                        <span>• {availabilityUpdates.length} recent changes</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
-                            {/* Room Grid/List */}
-                            {roomsLoading ? (
-                                <div
-                                    className={
-                                        viewMode === 'grid'
-                                            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-                                            : 'space-y-4'
-                                    }
-                                >
-                                    {Array.from({ length: 6 }).map((_, index) => (
-                                        <Card key={index} className="animate-pulse">
-                                            <CardHeader className="pb-3">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="space-y-2">
-                                                        <Skeleton className="h-5 w-32" />
-                                                        <div className="flex items-center gap-4">
-                                                            <Skeleton className="h-4 w-20" />
-                                                            <Skeleton className="h-4 w-24" />
-                                                        </div>
+                        {/* Room Grid/List */}
+                        {roomsLoading ? (
+                            <div
+                                className={
+                                    viewMode === 'grid'
+                                        ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                        : 'space-y-4'
+                                }
+                            >
+                                {Array.from({ length: 6 }).map((_, index) => (
+                                    <Card key={index} className="animate-pulse">
+                                        <CardHeader className="pb-3">
+                                            <div className="flex items-start justify-between">
+                                                <div className="space-y-2">
+                                                    <Skeleton className="h-5 w-32" />
+                                                    <div className="flex items-center gap-4">
+                                                        <Skeleton className="h-4 w-20" />
+                                                        <Skeleton className="h-4 w-24" />
                                                     </div>
-                                                    <Skeleton className="h-6 w-16" />
                                                 </div>
+                                                <Skeleton className="h-6 w-16" />
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <Skeleton className="h-4 w-full" />
+                                            <div className="flex flex-wrap gap-2">
+                                                <Skeleton className="h-6 w-16" />
+                                                <Skeleton className="h-6 w-20" />
+                                                <Skeleton className="h-6 w-14" />
+                                            </div>
+                                            <Skeleton className="h-10 w-full" />
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : filteredRooms.length === 0 ? (
+                            <Card>
+                                <CardContent className="flex flex-col items-center justify-center py-12">
+                                    <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                                    <h3 className="text-lg font-semibold mb-2">No rooms found</h3>
+                                    <p className="text-muted-foreground text-center">
+                                        Try adjusting your filters or search criteria to find available rooms.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div
+                                className={
+                                    viewMode === 'grid'
+                                        ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
+                                        : 'space-y-4'
+                                }
+                            >
+                                {filteredRooms.map((room) => (
+                                    <div
+                                        key={room.id}
+                                        className={`${selectedRoomId === room.id ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                                    >
+                                        <RoomCard
+                                            room={room}
+                                            onBook={handleBookRoom}
+                                            onSelect={(roomId) => {
+                                                setSelectedRoomId(roomId);
+                                                // Show a toast to indicate room selection
+                                                toast({
+                                                    title: "Room Selected",
+                                                    description: `${room.name} selected. Click Timeline View tab to see availability.`,
+                                                    duration: 4000,
+                                                });
+                                            }}
+                                            isSelected={selectedRoomId === room.id}
+                                            showAvailability={true}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="timeline" className="space-y-6">
+                        {selectedRoom ? (
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-semibold">{selectedRoom.name}</h3>
+                                        <p className="text-sm text-muted-foreground">{selectedRoom.location}</p>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSelectedRoomId(null)}
+                                    >
+                                        Clear Selection
+                                    </Button>
+                                </div>
+
+                                {
+                                    bookingsLoading ? (
+                                        <Card>
+                                            <CardHeader>
+                                                <Skeleton className="h-6 w-48" />
                                             </CardHeader>
-                                            <CardContent className="space-y-4">
-                                                <Skeleton className="h-4 w-full" />
-                                                <div className="flex flex-wrap gap-2">
-                                                    <Skeleton className="h-6 w-16" />
-                                                    <Skeleton className="h-6 w-20" />
-                                                    <Skeleton className="h-6 w-14" />
-                                                </div>
-                                                <Skeleton className="h-10 w-full" />
+                                            <CardContent className="space-y-3">
+                                                {Array.from({ length: 8 }).map((_, index) => (
+                                                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                                                        <div className="flex items-center gap-3">
+                                                            <Skeleton className="h-4 w-24" />
+                                                            <Skeleton className="h-5 w-16" />
+                                                        </div>
+                                                        <Skeleton className="h-8 w-16" />
+                                                    </div>
+                                                ))}
                                             </CardContent>
                                         </Card>
-                                    ))}
-                                </div>
-                            ) : filteredRooms.length === 0 ? (
-                                <Card>
-                                    <CardContent className="flex flex-col items-center justify-center py-12">
-                                        <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                                        <h3 className="text-lg font-semibold mb-2">No rooms found</h3>
-                                        <p className="text-muted-foreground text-center">
-                                            Try adjusting your filters or search criteria to find available rooms.
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            ) : (
-                                <div
-                                    className={
-                                        viewMode === 'grid'
-                                            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-                                            : 'space-y-4'
-                                    }
-                                >
-                                    {filteredRooms.map((room) => (
-                                        <div
-                                            key={room.id}
-                                            className={`${viewMode === 'list' ? 'cursor-pointer' : ''} ${selectedRoomId === room.id ? 'ring-2 ring-primary' : ''
-                                                }`}
-                                            onClick={viewMode === 'list' ? () => setSelectedRoomId(room.id) : undefined}
-                                        >
-                                            <RoomCard
-                                                room={room}
-                                                onBook={handleBookRoom}
-                                                onSelect={() => setSelectedRoomId(room.id)}
-                                                isSelected={selectedRoomId === room.id}
-                                                showAvailability={true}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </TabsContent>
-
-                        <TabsContent value="timeline" className="space-y-6">
-                            {selectedRoom ? (
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <h3 className="text-lg font-semibold">{selectedRoom.name}</h3>
-                                            <p className="text-sm text-muted-foreground">{selectedRoom.location}</p>
-                                        </div>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setSelectedRoomId(null)}
-                                        >
-                                            Clear Selection
-                                        </Button>
-                                    </div>
-
-                                    {
-                                        bookingsLoading ? (
-                                            <Card>
-                                                <CardHeader>
-                                                    <Skeleton className="h-6 w-48" />
-                                                </CardHeader>
-                                                <CardContent className="space-y-3">
-                                                    {Array.from({ length: 8 }).map((_, index) => (
-                                                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                                                            <div className="flex items-center gap-3">
-                                                                <Skeleton className="h-4 w-24" />
-                                                                <Skeleton className="h-5 w-16" />
-                                                            </div>
-                                                            <Skeleton className="h-8 w-16" />
-                                                        </div>
-                                                    ))}
-                                                </CardContent>
-                                            </Card>
-                                        ) : bookingsError ? (
-                                            <Alert variant="destructive">
-                                                <AlertCircle className="h-4 w-4" />
-                                                <AlertDescription>
-                                                    Failed to load booking timeline. Please try refreshing the page.
-                                                </AlertDescription>
-                                            </Alert>
-                                        ) : (
-                                            <AvailabilityTimeline
-                                                roomId={selectedRoom.id}
-                                                roomName={selectedRoom.name}
-                                                date={selectedDate}
-                                                bookings={bookings}
-                                                onBookSlot={(startTime, endTime) =>
-                                                    handleBookTimeSlot(selectedRoom.id, startTime, endTime)
-                                                }
-                                            />
-                                        )
-                                    }
-                                </div>
-                            ) : (
-                                <Card>
-                                    <CardContent className="flex flex-col items-center justify-center py-12">
-                                        <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                                        <h3 className="text-lg font-semibold mb-2">Select a room</h3>
-                                        <p className="text-muted-foreground text-center">
-                                            Choose a room from the list to view its availability timeline.
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </TabsContent>
-                    </Tabs>
-                </div>
+                                    ) : bookingsError ? (
+                                        <Alert variant="destructive">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <AlertDescription>
+                                                Failed to load booking timeline. Please try refreshing the page.
+                                            </AlertDescription>
+                                        </Alert>
+                                    ) : (
+                                        <AvailabilityTimeline
+                                            roomId={selectedRoom.id}
+                                            roomName={selectedRoom.name}
+                                            date={selectedDate}
+                                            bookings={bookings}
+                                            onBookSlot={(startTime, endTime) =>
+                                                handleBookTimeSlot(selectedRoom.id, startTime, endTime)
+                                            }
+                                        />
+                                    )
+                                }
+                            </div>
+                        ) : (
+                            <Card>
+                                <CardContent className="flex flex-col items-center justify-center py-12">
+                                    <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                                    <h3 className="text-lg font-semibold mb-2">Select a room</h3>
+                                    <p className="text-muted-foreground text-center">
+                                        Choose a room from the list to view its availability timeline.
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
     );

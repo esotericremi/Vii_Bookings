@@ -59,8 +59,6 @@ export const RealTimeSyncProvider: React.FC<RealTimeSyncProviderProps> = ({
         isConnected
     } = useEnhancedGlobalRoomSync(shouldEnableRealtime ? {
         onAvailabilityChange: (roomId, isAvailable, source, timestamp) => {
-            console.log(`Room ${roomId} availability changed:`, { isAvailable, source, timestamp });
-
             // Show toast notification for room availability changes
             if (enableToasts && isConnected) {
                 const now = new Date();
@@ -82,9 +80,7 @@ export const RealTimeSyncProvider: React.FC<RealTimeSyncProviderProps> = ({
             setRoomUpdateCount(prev => prev + 1);
         },
         onRealTimeUpdate: (roomId, eventType, isRealTime) => {
-            if (isRealTime) {
-                console.log(`Real-time ${eventType} event for room ${roomId}`);
-            }
+            // Real-time update processed
         }
     } : {});
 
@@ -113,7 +109,6 @@ export const RealTimeSyncProvider: React.FC<RealTimeSyncProviderProps> = ({
                         label: 'View Details',
                         onClick: () => {
                             // Navigate to admin dashboard or show details
-                            console.log('Critical notification details:', notification);
                         }
                     }
                 });

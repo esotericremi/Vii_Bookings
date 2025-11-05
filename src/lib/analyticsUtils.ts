@@ -75,18 +75,26 @@ export const getBusiestDayOfWeek = (trends: BookingTrendData[]): {
     day: string;
     averageBookings: number;
 } => {
+    if (!trends || trends.length === 0) {
+        return { day: 'N/A', averageBookings: 0 };
+    }
+
     const dayTotals: Record<string, { total: number; count: number }> = {};
 
     trends.forEach(trend => {
-        const date = parseISO(trend.date);
-        const dayName = format(date, 'EEEE');
+        try {
+            const date = parseISO(trend.date);
+            const dayName = format(date, 'EEEE');
 
-        if (!dayTotals[dayName]) {
-            dayTotals[dayName] = { total: 0, count: 0 };
+            if (!dayTotals[dayName]) {
+                dayTotals[dayName] = { total: 0, count: 0 };
+            }
+
+            dayTotals[dayName].total += trend.confirmed || 0;
+            dayTotals[dayName].count += 1;
+        } catch (error) {
+            // Skip invalid dates silently
         }
-
-        dayTotals[dayName].total += trend.confirmed;
-        dayTotals[dayName].count += 1;
     });
 
     let busiestDay = { day: 'Monday', averageBookings: 0 };
@@ -135,28 +143,43 @@ export const generateAnalyticsSummary = (
     trends: BookingTrendData[],
     departments: DepartmentUsageData[]
 ) => {
-    const averageDuration = calculateAverageBookingDuration(utilization);
-    const cancellationRate = calculateCancellationRate(analytics);
-    const busiestDay = getBusiestDayOfWeek(trends);
-    const topRoom = analytics.popular_rooms[0];
-    const topDepartment = departments[0];
+    try {
+        const averageDuration = calculateAverageBookingDuration(utilization || []);
+        const cancellationRate = calculateCancellationRate(analytics);
+        const busiestDay = getBusiestDayOfWeek(trends || []);
+        const topRoom = analytics?.popular_rooms?.[0];
+        const topDepartment = departments?.[0];
 
-    // Calculate overall room utilization
-    const overallUtilization = utilization.length > 0 ?
-        utilization.reduce((sum, room) => sum + room.utilization_percentage, 0) / utilization.length : 0;
+        // Calculate overall room utilization
+        const overallUtilization = utilization && utilization.length > 0 ?
+            utilization.reduce((sum, room) => sum + (room.utilization_percentage || 0), 0) / utilization.length : 0;
 
-    return {
-        totalBookings: analytics.total_bookings,
-        utilizationRate: analytics.utilization_rate,
-        cancellationRate,
-        averageBookingDuration: averageDuration,
-        overallRoomUtilization: Math.round(overallUtilization * 100) / 100,
-        busiestDay: busiestDay.day,
-        mostPopularRoom: topRoom?.room_name || 'N/A',
-        mostActiveDepartment: topDepartment?.department || 'N/A',
-        peakHour: analytics.peak_hours[0] ?
-            format(new Date().setHours(analytics.peak_hours[0].hour, 0, 0, 0), 'HH:mm') : 'N/A'
-    };
+        return {
+            totalBookings: analytics?.total_bookings || 0,
+            utilizationRate: analytics?.utilization_rate || 0,
+            cancellationRate: cancellationRate || 0,
+            averageBookingDuration: averageDuration || 0,
+            overallRoomUtilization: Math.round((overallUtilization || 0) * 100) / 100,
+            busiestDay: busiestDay?.day || 'N/A',
+            mostPopularRoom: topRoom?.room_name || 'N/A',
+            mostActiveDepartment: topDepartment?.department || 'N/A',
+            peakHour: analytics?.peak_hours?.[0] ?
+                format(new Date().setHours(analytics.peak_hours[0].hour, 0, 0, 0), 'HH:mm') : 'N/A'
+        };
+    } catch (error) {
+        // Return default values if there's an error
+        return {
+            totalBookings: 0,
+            utilizationRate: 0,
+            cancellationRate: 0,
+            averageBookingDuration: 0,
+            overallRoomUtilization: 0,
+            busiestDay: 'N/A',
+            mostPopularRoom: 'N/A',
+            mostActiveDepartment: 'N/A',
+            peakHour: 'N/A'
+        };
+    }
 };
 
 // Format data for CSV export

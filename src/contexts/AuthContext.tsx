@@ -60,9 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
                     if (session?.user) {
                         try {
-                            console.log('AuthContext - Initial session, fetching profile for user:', session.user.id);
                             const profile = await getUserProfile(session.user.id);
-                            console.log('AuthContext - Initial profile fetched:', profile);
 
                             if (profile) {
                                 setUserProfile(profile);
@@ -72,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                                 if (fallbackProfile) {
                                     const parsedProfile = JSON.parse(fallbackProfile);
                                     if (parsedProfile.id === session.user.id) {
-                                        console.log('AuthContext - Using fallback admin profile');
+
                                         setUserProfile(parsedProfile);
                                     }
                                 }
@@ -85,7 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                             if (fallbackProfile) {
                                 const parsedProfile = JSON.parse(fallbackProfile);
                                 if (parsedProfile.id === session.user.id) {
-                                    console.log('AuthContext - Using fallback admin profile after error');
+
                                     setUserProfile(parsedProfile);
                                 } else {
                                     setUserProfile(null);
@@ -109,16 +107,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                console.log('Auth state changed:', event, session);
-
                 setSession(session);
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
-                    console.log('AuthContext - Fetching profile for user:', session.user.id);
                     try {
                         const profile = await getUserProfile(session.user.id);
-                        console.log('AuthContext - Profile fetched:', profile);
 
                         if (profile) {
                             setUserProfile(profile);
@@ -128,7 +122,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                             if (fallbackProfile) {
                                 const parsedProfile = JSON.parse(fallbackProfile);
                                 if (parsedProfile.id === session.user.id) {
-                                    console.log('AuthContext - Using fallback admin profile');
                                     setUserProfile(parsedProfile);
                                 } else {
                                     setUserProfile(null);
@@ -145,7 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         if (fallbackProfile) {
                             const parsedProfile = JSON.parse(fallbackProfile);
                             if (parsedProfile.id === session.user.id) {
-                                console.log('AuthContext - Using fallback admin profile after error');
+
                                 setUserProfile(parsedProfile);
                             } else {
                                 setUserProfile(null);

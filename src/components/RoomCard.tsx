@@ -29,7 +29,7 @@ export const RoomCard = ({ room, onBook, onSelect, isSelected = false, showAvail
   const { isConnected, lastUpdate } = useRealTimeAvailability({
     roomId: enableRealTime ? room.id : null,
     onAvailabilityChange: (roomId, isAvailable) => {
-      console.log(`Room ${roomId} availability changed to ${isAvailable}`);
+      // Room availability changed
     }
   });
 

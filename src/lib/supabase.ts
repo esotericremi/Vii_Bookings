@@ -33,8 +33,6 @@ export const getCurrentUser = async () => {
 
 // Helper function to get user profile
 export const getUserProfile = async (userId: string) => {
-    console.log('getUserProfile - Fetching profile for userId:', userId);
-
     try {
         // Add timeout protection
         const timeoutPromise = new Promise((_, reject) => {
@@ -48,8 +46,6 @@ export const getUserProfile = async (userId: string) => {
             .single();
 
         const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
-
-        console.log('getUserProfile - Query result:', { data, error });
 
         if (error) {
             console.error('Error getting user profile:', error);

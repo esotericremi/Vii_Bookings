@@ -255,7 +255,6 @@ export const useEnhancedBookingToasts = () => {
                     label: 'Find Alternative',
                     onClick: () => {
                         // This could trigger a callback to find next available slot
-                        console.log('Finding alternative slot...');
                     }
                 }
             }

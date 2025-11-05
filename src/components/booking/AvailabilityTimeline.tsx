@@ -95,13 +95,17 @@ export const AvailabilityTimeline = ({
                                 className={`
                   flex items-center justify-between p-3 rounded-lg border transition-colors
                   ${slot.isAvailable && !isPast
-                                        ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                                        ? 'bg-green-50 border-green-200 hover:bg-green-100 cursor-pointer'
                                         : slot.booking
                                             ? 'bg-red-50 border-red-200'
                                             : 'bg-gray-50 border-gray-200'
                                     }
                   ${isPast ? 'opacity-50' : ''}
                 `}
+                                onClick={canBook ? (e) => {
+                                    e.preventDefault();
+                                    onBookSlot?.(slot.startTime, slot.endTime);
+                                } : undefined}
                             >
                                 <div className="flex items-center gap-3">
                                     <div className="text-sm font-medium">
@@ -129,12 +133,18 @@ export const AvailabilityTimeline = ({
 
                                     {slot.booking && (
                                         <div className="text-sm text-muted-foreground">
-                                            {slot.booking.title}
+                                            <div className="font-medium">{slot.booking.title}</div>
                                             {slot.booking.user && (
-                                                <span className="ml-1">
+                                                <div className="text-xs">
                                                     by {slot.booking.user.full_name}
-                                                </span>
+                                                </div>
                                             )}
+                                        </div>
+                                    )}
+
+                                    {slot.isAvailable && !isPast && !canBook && (
+                                        <div className="text-sm text-muted-foreground">
+                                            Available - Click to book
                                         </div>
                                     )}
                                 </div>
@@ -142,7 +152,11 @@ export const AvailabilityTimeline = ({
                                 {canBook && (
                                     <Button
                                         size="sm"
-                                        onClick={() => onBookSlot(slot.startTime, slot.endTime)}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            onBookSlot?.(slot.startTime, slot.endTime);
+                                        }}
                                         className="bg-green-600 hover:bg-green-700"
                                     >
                                         Book

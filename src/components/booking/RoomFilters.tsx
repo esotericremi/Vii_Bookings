@@ -72,89 +72,43 @@ export const RoomFilters = ({ filters, onFiltersChange, className }: RoomFilters
     return (
         <Card className={className}>
             <CardContent className="p-4">
-                {/* Search Bar */}
-                <div className="relative mb-4">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                        placeholder="Search rooms by name, location, or description..."
-                        value={localFilters.search || ''}
-                        onChange={(e) => handleFilterChange('search', e.target.value || undefined)}
-                        className="pl-10"
-                    />
-                </div>
-
-                {/* Filter Toggle */}
-                <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-                    <div className="flex items-center justify-between mb-4">
-                        <CollapsibleTrigger asChild>
-                            <Button variant="outline" size="sm" className="flex items-center gap-2">
-                                <Filter className="h-4 w-4" />
-                                Filters
-                                {hasActiveFilters && (
-                                    <Badge variant="secondary" className="ml-1">
-                                        {getActiveFilterCount()}
-                                    </Badge>
-                                )}
-                            </Button>
-                        </CollapsibleTrigger>
-
-                        {hasActiveFilters && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={clearFilters}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-4 w-4 mr-1" />
-                                Clear
-                            </Button>
-                        )}
+                {/* Horizontal Layout for Search and Quick Filters */}
+                <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center">
+                    {/* Search Bar */}
+                    <div className="relative flex-1 min-w-0">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Input
+                            placeholder="Search rooms by name, location, or description..."
+                            value={localFilters.search || ''}
+                            onChange={(e) => handleFilterChange('search', e.target.value || undefined)}
+                            className="pl-10"
+                        />
                     </div>
 
-                    <CollapsibleContent className="space-y-4">
+                    {/* Quick Filters Row */}
+                    <div className="flex flex-wrap items-center gap-3">
                         {/* Capacity Filter */}
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <Label htmlFor="capacity-min" className="text-sm font-medium flex items-center gap-1">
-                                    <Users className="h-3 w-3" />
-                                    Min Capacity
-                                </Label>
-                                <Input
-                                    id="capacity-min"
-                                    type="number"
-                                    placeholder="Min"
-                                    value={localFilters.capacity_min || ''}
-                                    onChange={(e) => handleFilterChange('capacity_min', e.target.value ? parseInt(e.target.value) : undefined)}
-                                    min="1"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="capacity-max" className="text-sm font-medium">
-                                    Max Capacity
-                                </Label>
-                                <Input
-                                    id="capacity-max"
-                                    type="number"
-                                    placeholder="Max"
-                                    value={localFilters.capacity_max || ''}
-                                    onChange={(e) => handleFilterChange('capacity_max', e.target.value ? parseInt(e.target.value) : undefined)}
-                                    min="1"
-                                />
-                            </div>
+                        <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="number"
+                                placeholder="Min capacity"
+                                value={localFilters.capacity_min || ''}
+                                onChange={(e) => handleFilterChange('capacity_min', e.target.value ? parseInt(e.target.value) : undefined)}
+                                className="w-24"
+                                min="1"
+                            />
                         </div>
 
                         {/* Floor Filter */}
-                        <div>
-                            <Label className="text-sm font-medium flex items-center gap-1 mb-2">
-                                <Building className="h-3 w-3" />
-                                Floor
-                            </Label>
+                        <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4 text-muted-foreground" />
                             <Select
                                 value={localFilters.floor || 'all'}
                                 onValueChange={(value) => handleFilterChange('floor', value === 'all' ? undefined : value)}
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select floor" />
+                                <SelectTrigger className="w-32">
+                                    <SelectValue placeholder="Floor" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All floors</SelectItem>
@@ -168,17 +122,14 @@ export const RoomFilters = ({ filters, onFiltersChange, className }: RoomFilters
                         </div>
 
                         {/* Location Filter */}
-                        <div>
-                            <Label className="text-sm font-medium flex items-center gap-1 mb-2">
-                                <MapPin className="h-3 w-3" />
-                                Location
-                            </Label>
+                        <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
                             <Select
                                 value={localFilters.location || 'all'}
                                 onValueChange={(value) => handleFilterChange('location', value === 'all' ? undefined : value)}
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select location" />
+                                <SelectTrigger className="w-40">
+                                    <SelectValue placeholder="Location" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All locations</SelectItem>
@@ -191,32 +142,78 @@ export const RoomFilters = ({ filters, onFiltersChange, className }: RoomFilters
                             </Select>
                         </div>
 
-                        {/* Equipment Filter */}
-                        <div>
-                            <Label className="text-sm font-medium flex items-center gap-1 mb-2">
-                                <Wrench className="h-3 w-3" />
-                                Equipment
-                            </Label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {equipment.map((equipmentItem) => (
-                                    <div key={equipmentItem} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={`equipment-${equipmentItem}`}
-                                            checked={localFilters.equipment?.includes(equipmentItem) || false}
-                                            onCheckedChange={(checked) => handleEquipmentToggle(equipmentItem, checked as boolean)}
-                                        />
-                                        <Label
-                                            htmlFor={`equipment-${equipmentItem}`}
-                                            className="text-sm font-normal cursor-pointer"
-                                        >
-                                            {equipmentItem}
+                        {/* Advanced Filters Toggle */}
+                        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+                            <CollapsibleTrigger asChild>
+                                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                                    <Filter className="h-4 w-4" />
+                                    More Filters
+                                    {hasActiveFilters && (
+                                        <Badge variant="secondary" className="ml-1">
+                                            {getActiveFilterCount()}
+                                        </Badge>
+                                    )}
+                                </Button>
+                            </CollapsibleTrigger>
+
+                            {hasActiveFilters && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={clearFilters}
+                                    className="text-muted-foreground hover:text-foreground ml-2"
+                                >
+                                    <X className="h-4 w-4 mr-1" />
+                                    Clear
+                                </Button>
+                            )}
+
+                            <CollapsibleContent className="mt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border rounded-lg bg-muted/30">
+                                    {/* Max Capacity */}
+                                    <div>
+                                        <Label htmlFor="capacity-max" className="text-sm font-medium">
+                                            Max Capacity
                                         </Label>
+                                        <Input
+                                            id="capacity-max"
+                                            type="number"
+                                            placeholder="Max"
+                                            value={localFilters.capacity_max || ''}
+                                            onChange={(e) => handleFilterChange('capacity_max', e.target.value ? parseInt(e.target.value) : undefined)}
+                                            min="1"
+                                        />
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    </CollapsibleContent>
-                </Collapsible>
+
+                                    {/* Equipment Filter */}
+                                    <div className="md:col-span-2">
+                                        <Label className="text-sm font-medium flex items-center gap-1 mb-2">
+                                            <Wrench className="h-3 w-3" />
+                                            Equipment
+                                        </Label>
+                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                            {equipment.map((equipmentItem) => (
+                                                <div key={equipmentItem} className="flex items-center space-x-2">
+                                                    <Checkbox
+                                                        id={`equipment-${equipmentItem}`}
+                                                        checked={localFilters.equipment?.includes(equipmentItem) || false}
+                                                        onCheckedChange={(checked) => handleEquipmentToggle(equipmentItem, checked as boolean)}
+                                                    />
+                                                    <Label
+                                                        htmlFor={`equipment-${equipmentItem}`}
+                                                        className="text-sm font-normal cursor-pointer"
+                                                    >
+                                                        {equipmentItem}
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </div>
+                </div>
 
                 {/* Active Filters Display */}
                 {hasActiveFilters && (
