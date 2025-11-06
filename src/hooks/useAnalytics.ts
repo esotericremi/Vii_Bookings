@@ -1,3 +1,4 @@
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsQueries } from '@/lib/queries';
 
@@ -94,6 +95,8 @@ export const useAnalyticsDashboard = (startDate?: string, endDate?: string) => {
     const roomUtilization = useRoomUtilization(undefined, startDate, endDate);
     const bookingTrends = useBookingTrends(startDate, endDate, 'day');
     const departmentUsage = useDepartmentUsage(startDate, endDate);
+
+
 
     return {
         bookingAnalytics,

@@ -38,11 +38,7 @@ const routeBreadcrumbs: Record<string, BreadcrumbItem[]> = {
         { label: 'Home', href: '/' },
         { label: 'Admin', isActive: true }
     ],
-    '/admin/dashboard': [
-        { label: 'Home', href: '/' },
-        { label: 'Admin', href: '/admin' },
-        { label: 'Dashboard', isActive: true }
-    ],
+
     '/admin/bookings': [
         { label: 'Home', href: '/' },
         { label: 'Admin', href: '/admin' },

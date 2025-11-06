@@ -58,13 +58,7 @@ const navItems: NavItem[] = [
         path: '/my-bookings'
     },
     // Admin-only items
-    {
-        id: 'admin-dashboard',
-        label: 'Admin Dashboard',
-        icon: BarChart3,
-        roles: ['admin'],
-        path: '/admin/dashboard'
-    },
+
     {
         id: 'admin-rooms',
         label: 'Manage Rooms',

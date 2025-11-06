@@ -16,10 +16,12 @@ export const Analytics: React.FC = () => {
     const [selectedDateRange, setSelectedDateRange] = useState('last-30-days');
     const dateRangeOptions = getDateRangeOptions();
 
-    // Get the selected date range
+    // Get the selected date range and convert to full ISO strings
     const selectedRange = dateRangeOptions.find(option => option.value === selectedDateRange);
-    const startDate = selectedRange?.startDate;
-    const endDate = selectedRange?.endDate;
+    const startDate = selectedRange?.startDate ? selectedRange.startDate + 'T00:00:00.000Z' : undefined;
+    const endDate = selectedRange?.endDate ? selectedRange.endDate + 'T23:59:59.999Z' : undefined;
+
+
 
     // Fetch analytics data
     const {
@@ -96,12 +98,12 @@ export const Analytics: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2">
                 <div>
                     <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground mt-2">
                         Meeting room booking insights and trends
                     </p>
                 </div>
@@ -123,7 +125,8 @@ export const Analytics: React.FC = () => {
                     </Select>
 
                     {/* Export Buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
+
                         <Button
                             onClick={handleExportCSV}
                             variant="outline"
@@ -142,21 +145,23 @@ export const Analytics: React.FC = () => {
                         </Button>
                     </div>
                 </div>
-            </div>
+            </header>
 
             {/* Date Range Display */}
             {selectedRange && (
-                <Card>
-                    <CardContent className="pt-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <CalendarIcon className="h-4 w-4" />
-                            <span>
-                                Showing data from {format(new Date(selectedRange.startDate), 'MMM dd, yyyy')} to{' '}
-                                {format(new Date(selectedRange.endDate), 'MMM dd, yyyy')}
-                            </span>
-                        </div>
-                    </CardContent>
-                </Card>
+                <section className="mt-6">
+                    <Card className="shadow-sm">
+                        <CardContent className="pt-4">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <CalendarIcon className="h-4 w-4" />
+                                <span>
+                                    Showing data from {format(new Date(selectedRange.startDate), 'MMM dd, yyyy')} to{' '}
+                                    {format(new Date(selectedRange.endDate), 'MMM dd, yyyy')}
+                                </span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </section>
             )}
 
             {isLoading ? (
@@ -166,16 +171,16 @@ export const Analytics: React.FC = () => {
             ) : (
                 <>
                     {/* Summary Cards */}
-                    <div className="mb-6">
+                    <section className="mt-8">
                         {summaryData ? (
-                            <div>                                
+                            <div>
                                 <AnalyticsSummaryCards
                                     summary={summaryData}
                                     isLoading={isLoading}
                                 />
                             </div>
                         ) : !isLoading ? (
-                            <Card>
+                            <Card className="shadow-sm">
                                 <CardContent className="pt-6">
                                     <div className="text-center text-muted-foreground">
                                         <p>No summary data available. Create some rooms and bookings to see analytics.</p>
@@ -185,28 +190,30 @@ export const Analytics: React.FC = () => {
                         ) : (
                             <div className="text-center">Loading summary...</div>
                         )}
-                    </div>
+                    </section>
 
                     {/* Charts Section */}
-                    <AnalyticsCharts
-                        bookingAnalytics={bookingAnalytics.data}
-                        roomUtilization={roomUtilization.data}
-                        bookingTrends={bookingTrends.data}
-                        departmentUsage={departmentUsage.data}
-                        isLoading={isLoading}
-                    />
+                    <section className="mt-8">
+                        <AnalyticsCharts
+                            bookingAnalytics={bookingAnalytics.data}
+                            roomUtilization={roomUtilization.data}
+                            bookingTrends={bookingTrends.data}
+                            departmentUsage={departmentUsage.data}
+                            isLoading={isLoading}
+                        />
+                    </section>
 
                     {/* Detailed Tables */}
-                    <AnalyticsTable
-                        roomUtilization={roomUtilization.data}
-                        departmentUsage={departmentUsage.data}
-                        popularRooms={bookingAnalytics.data?.popular_rooms}
-                        isLoading={isLoading}
-                    />
-
-
+                    <section className="mt-8">
+                        <AnalyticsTable
+                            roomUtilization={roomUtilization.data}
+                            departmentUsage={departmentUsage.data}
+                            popularRooms={bookingAnalytics.data?.popular_rooms}
+                            isLoading={isLoading}
+                        />
+                    </section>
                 </>
             )}
-        </div>
+        </div >
     );
 };

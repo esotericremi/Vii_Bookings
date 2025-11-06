@@ -23,7 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { useRealtimeConnectionStatus } from '@/hooks/useRealTimeAvailability';
-import { useRealTimeSync } from './RealTimeSyncProvider';
+import { useRealTimeSyncSafe } from './RealTimeSyncProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -55,12 +55,12 @@ export const EnhancedConnectionStatus: React.FC<EnhancedConnectionStatusProps> =
         isMonitoringEnabled
     } = useRealtimeConnectionStatus();
 
-    const {
-        connectionStatus: syncStatus,
-        lastUpdate,
-        syncUpdates,
-        adminNotifications
-    } = useRealTimeSync();
+    // Safely use RealTimeSync hook with fallback
+    const realTimeSync = useRealTimeSyncSafe();
+    const syncStatus = realTimeSync?.connectionStatus || 'disconnected';
+    const lastUpdate = realTimeSync?.lastUpdate || null;
+    const syncUpdates = realTimeSync?.syncUpdates || 0;
+    const adminNotifications = realTimeSync?.adminNotifications || [];
 
     const getStatusConfig = () => {
         if (isConnected) {

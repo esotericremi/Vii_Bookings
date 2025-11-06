@@ -175,6 +175,12 @@ export const useRealTimeSync = (): RealTimeSyncContextType => {
     return context;
 };
 
+// Safe version that returns null if provider is not available
+export const useRealTimeSyncSafe = (): RealTimeSyncContextType | null => {
+    const context = useContext(RealTimeSyncContext);
+    return context || null;
+};
+
 // Higher-order component for easy integration
 export const withRealTimeSync = <P extends object>(
     Component: React.ComponentType<P>,

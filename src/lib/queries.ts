@@ -899,33 +899,260 @@ export const notificationQueries = {
     }
 };
 
-// Analytics queries (simplified version without the complex analytics)
+// Analytics queries
 export const analyticsQueries = {
-    // Get basic booking analytics
+    // Get comprehensive booking analytics
     getBookingAnalytics: async (startDate?: string, endDate?: string) => {
-        const defaultStartDate = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        const defaultEndDate = endDate || new Date().toISOString();
+        // Use provided dates or default to last 30 days
+        const defaultStartDate = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + 'T00:00:00.000Z';
+        const defaultEndDate = endDate || new Date().toISOString().split('T')[0] + 'T23:59:59.999Z';
 
-        const { data: bookings, error } = await db
-            .from('bookings')
-            .select('id, status, start_time')
-            .gte('start_time', defaultStartDate)
-            .lte('start_time', defaultEndDate);
+        try {
+            // Get bookings with room information
+            const { data: bookings, error: bookingsError } = await db
+                .from('bookings')
+                .select(`
+                    id, 
+                    status, 
+                    start_time, 
+                    end_time,
+                    room_id,
+                    rooms(id, name)
+                `)
+                .gte('start_time', defaultStartDate)
+                .lte('start_time', defaultEndDate);
 
-        if (error) throw error;
 
-        const totalBookings = bookings?.length || 0;
-        const confirmedBookings = bookings?.filter(b => b.status === 'confirmed').length || 0;
-        const cancelledBookings = bookings?.filter(b => b.status === 'cancelled').length || 0;
-        const utilizationRate = totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : 0;
 
-        return {
-            total_bookings: totalBookings,
-            confirmed_bookings: confirmedBookings,
-            cancelled_bookings: cancelledBookings,
-            utilization_rate: Math.round(utilizationRate * 100) / 100,
-            peak_hours: [],
-            popular_rooms: []
-        };
+            if (bookingsError) throw bookingsError;
+
+            const totalBookings = bookings?.length || 0;
+            const confirmedBookings = bookings?.filter(b => b.status === 'confirmed').length || 0;
+            const cancelledBookings = bookings?.filter(b => b.status === 'cancelled').length || 0;
+            const utilizationRate = totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : 0;
+
+            // Calculate peak hours
+            const hourCounts: Record<number, number> = {};
+            bookings?.forEach(booking => {
+                if (booking.status === 'confirmed') {
+                    const hour = new Date(booking.start_time).getHours();
+                    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                }
+            });
+
+            const peakHours = Object.entries(hourCounts)
+                .map(([hour, count]) => ({ hour: parseInt(hour), count }))
+                .sort((a, b) => b.count - a.count);
+
+            // Calculate popular rooms
+            const roomCounts: Record<string, { room_id: string; room_name: string; booking_count: number }> = {};
+            bookings?.forEach(booking => {
+                if (booking.status === 'confirmed' && booking.rooms) {
+                    const roomId = booking.room_id;
+                    if (!roomCounts[roomId]) {
+                        roomCounts[roomId] = {
+                            room_id: roomId,
+                            room_name: booking.rooms.name,
+                            booking_count: 0
+                        };
+                    }
+                    roomCounts[roomId].booking_count++;
+                }
+            });
+
+            const popularRooms = Object.values(roomCounts)
+                .sort((a, b) => b.booking_count - a.booking_count);
+
+            return {
+                total_bookings: totalBookings,
+                confirmed_bookings: confirmedBookings,
+                cancelled_bookings: cancelledBookings,
+                utilization_rate: Math.round(utilizationRate * 100) / 100,
+                peak_hours: peakHours,
+                popular_rooms: popularRooms
+            };
+        } catch (error) {
+            console.error('Error fetching booking analytics:', error);
+            return {
+                total_bookings: 0,
+                confirmed_bookings: 0,
+                cancelled_bookings: 0,
+                utilization_rate: 0,
+                peak_hours: [],
+                popular_rooms: []
+            };
+        }
+    },
+
+    // Get room utilization data
+    getRoomUtilization: async (roomId?: string, startDate?: string, endDate?: string) => {
+        const defaultStartDate = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + 'T00:00:00.000Z';
+        const defaultEndDate = endDate || new Date().toISOString().split('T')[0] + 'T23:59:59.999Z';
+
+        try {
+            // First get all active rooms
+            const { data: rooms, error: roomsError } = await db
+                .from('rooms')
+                .select('id, name')
+                .eq('is_active', true);
+
+            if (roomsError) throw roomsError;
+
+
+
+            // Then get bookings for the date range
+            let bookingsQuery = db
+                .from('bookings')
+                .select('id, status, start_time, end_time, room_id')
+                .gte('start_time', defaultStartDate)
+                .lte('start_time', defaultEndDate)
+                .eq('status', 'confirmed');
+
+            if (roomId) {
+                bookingsQuery = bookingsQuery.eq('room_id', roomId);
+            }
+
+            const { data: bookings, error: bookingsError } = await bookingsQuery;
+            if (bookingsError) throw bookingsError;
+
+
+
+            // Calculate utilization for each room
+            const utilizationData = rooms?.map(room => {
+                const roomBookings = bookings?.filter(booking => booking.room_id === room.id) || [];
+
+                const totalHours = roomBookings.reduce((sum, booking) => {
+                    const start = new Date(booking.start_time);
+                    const end = new Date(booking.end_time);
+                    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                    return sum + hours;
+                }, 0);
+
+                // Calculate utilization percentage (assuming 8 hours per day for the period)
+                const daysDiff = Math.ceil((new Date(defaultEndDate).getTime() - new Date(defaultStartDate).getTime()) / (1000 * 60 * 60 * 24));
+                const availableHours = daysDiff * 8; // 8 working hours per day
+                const utilizationPercentage = availableHours > 0 ? (totalHours / availableHours) * 100 : 0;
+
+                return {
+                    room_id: room.id,
+                    room_name: room.name,
+                    booking_count: roomBookings.length,
+                    total_hours_booked: Math.round(totalHours * 100) / 100,
+                    utilization_percentage: Math.round(utilizationPercentage * 100) / 100
+                };
+            }) || [];
+
+            return utilizationData;
+        } catch (error) {
+            console.error('Error fetching room utilization:', error);
+            return [];
+        }
+    },
+
+    // Get booking trends over time
+    getBookingTrends: async (startDate?: string, endDate?: string, granularity: 'day' | 'week' | 'month' = 'day') => {
+        const defaultStartDate = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + 'T00:00:00.000Z';
+        const defaultEndDate = endDate || new Date().toISOString().split('T')[0] + 'T23:59:59.999Z';
+
+        try {
+            const { data: bookings, error } = await db
+                .from('bookings')
+                .select('status, start_time')
+                .gte('start_time', defaultStartDate)
+                .lte('start_time', defaultEndDate);
+
+
+
+            if (error) throw error;
+
+            // Group bookings by date
+            const dateGroups: Record<string, { confirmed: number; cancelled: number; total: number }> = {};
+
+            bookings?.forEach(booking => {
+                const date = new Date(booking.start_time).toISOString().split('T')[0];
+                if (!dateGroups[date]) {
+                    dateGroups[date] = { confirmed: 0, cancelled: 0, total: 0 };
+                }
+                dateGroups[date].total++;
+                if (booking.status === 'confirmed') {
+                    dateGroups[date].confirmed++;
+                } else if (booking.status === 'cancelled') {
+                    dateGroups[date].cancelled++;
+                }
+            });
+
+            // Convert to array and sort by date
+            const trends = Object.entries(dateGroups)
+                .map(([date, counts]) => ({
+                    date,
+                    ...counts
+                }))
+                .sort((a, b) => a.date.localeCompare(b.date));
+
+            return trends;
+        } catch (error) {
+            console.error('Error fetching booking trends:', error);
+            return [];
+        }
+    },
+
+    // Get department usage statistics
+    getDepartmentUsage: async (startDate?: string, endDate?: string) => {
+        const defaultStartDate = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] + 'T00:00:00.000Z';
+        const defaultEndDate = endDate || new Date().toISOString().split('T')[0] + 'T23:59:59.999Z';
+
+        try {
+            const { data: bookings, error } = await db
+                .from('bookings')
+                .select(`
+                    id,
+                    status,
+                    start_time,
+                    end_time,
+                    user_id,
+                    users(
+                        id,
+                        department
+                    )
+                `)
+                .gte('start_time', defaultStartDate)
+                .lte('start_time', defaultEndDate)
+                .eq('status', 'confirmed');
+
+
+
+            if (error) throw error;
+
+            // Group by department
+            const departmentGroups: Record<string, { booking_count: number; total_hours: number }> = {};
+
+            bookings?.forEach(booking => {
+                const department = booking.users?.department || 'Unknown';
+                if (!departmentGroups[department]) {
+                    departmentGroups[department] = { booking_count: 0, total_hours: 0 };
+                }
+
+                departmentGroups[department].booking_count++;
+
+                const start = new Date(booking.start_time);
+                const end = new Date(booking.end_time);
+                const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                departmentGroups[department].total_hours += hours;
+            });
+
+            // Convert to array and sort by booking count
+            const departmentUsage = Object.entries(departmentGroups)
+                .map(([department, stats]) => ({
+                    department,
+                    booking_count: stats.booking_count,
+                    total_hours: Math.round(stats.total_hours * 100) / 100
+                }))
+                .sort((a, b) => b.booking_count - a.booking_count);
+
+            return departmentUsage;
+        } catch (error) {
+            console.error('Error fetching department usage:', error);
+            return [];
+        }
     }
 };

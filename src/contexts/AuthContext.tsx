@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
-import { supabase, getUserProfile } from '@/lib/supabase';
+import { supabase, getUserProfile, checkDatabaseHealth } from '@/lib/supabase';
 import { Database } from '@/types/database';
+import { logAuthState, validateUserRole } from '@/utils/authDebug';
 
 type UserProfile = Database['public']['Tables']['users']['Row'];
 type UserInsert = Database['public']['Tables']['users']['Insert'];
@@ -38,25 +39,102 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [authTimeout, setAuthTimeout] = useState<NodeJS.Timeout | null>(null);
 
-    // Helper function to handle profile loading with better error handling
+    // Helper function to handle profile loading with aggressive caching
     const loadUserProfile = async (userId: string): Promise<UserProfile | null> => {
+        const cacheKey = `user_profile_${userId}`;
+        const emergencyAdminKey = `emergency_admin_${userId}`;
+
         try {
-            const profile = await getUserProfile(userId);
-            if (profile) {
+            // Check for emergency admin mode first
+            const emergencyAdmin = localStorage.getItem(emergencyAdminKey);
+            if (emergencyAdmin) {
+                const emergencyProfile = JSON.parse(emergencyAdmin);
+                console.log('🚨 Using emergency admin profile');
+                return emergencyProfile;
+            }
+
+            // Try to get from cache first (always prefer cache for speed)
+            const cachedProfile = localStorage.getItem(cacheKey);
+            if (cachedProfile) {
+                try {
+                    const { profile, timestamp } = JSON.parse(cachedProfile);
+                    // Use cache if it's less than 30 minutes old OR if we have connection issues
+                    const isRecentEnough = Date.now() - timestamp < 30 * 60 * 1000; // 30 minutes
+                    if (profile && isRecentEnough) {
+                        console.log('📦 Using cached user profile');
+
+                        // Try to refresh in background if cache is older than 5 minutes
+                        const shouldRefresh = Date.now() - timestamp > 5 * 60 * 1000;
+                        if (shouldRefresh) {
+                            // Background refresh - don't wait for it
+                            getUserProfile(userId, false).then(freshProfile => {
+                                if (freshProfile && validateUserRole(freshProfile)) {
+                                    localStorage.setItem(cacheKey, JSON.stringify({
+                                        profile: freshProfile,
+                                        timestamp: Date.now()
+                                    }));
+
+                                }
+                            }).catch(error => {
+                                console.warn('Background refresh failed:', error);
+                            });
+                        }
+
+                        return profile;
+                    }
+                } catch (parseError) {
+                    console.warn('Error parsing cached profile, will fetch fresh');
+                    localStorage.removeItem(cacheKey);
+                }
+            }
+
+            // Try to fetch fresh profile (with built-in fallback to cache)
+            const profile = await getUserProfile(userId, true);
+
+            if (profile && validateUserRole(profile)) {
+                logAuthState('Profile Loaded Successfully', { id: userId }, profile, null);
                 return profile;
             }
 
             // Check for fallback admin profile
             const fallbackProfile = localStorage.getItem('fallback_admin_profile');
             if (fallbackProfile) {
-                const parsedProfile = JSON.parse(fallbackProfile);
-                if (parsedProfile.id === userId) {
-                    return parsedProfile;
+                try {
+                    const parsedProfile = JSON.parse(fallbackProfile);
+                    if (parsedProfile.id === userId) {
+
+                        return parsedProfile;
+                    }
+                } catch (error) {
+                    console.warn('Error parsing fallback profile:', error);
                 }
             }
+
+            console.warn('❌ No user profile found after all attempts');
             return null;
         } catch (error) {
             console.error('Error loading user profile:', error);
+
+            // If we have retries left, try again
+            if (retryCount < maxRetries) {
+                console.log(`Profile fetch error, retrying... (${retryCount + 1}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                return loadUserProfile(userId, retryCount + 1);
+            }
+
+            // Check for cached profile as last resort
+            const cachedProfile = localStorage.getItem(cacheKey);
+            if (cachedProfile) {
+                try {
+                    const { profile } = JSON.parse(cachedProfile);
+                    if (profile) {
+
+                        return profile;
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing cached profile:', parseError);
+                }
+            }
 
             // Check for fallback admin profile on error
             const fallbackProfile = localStorage.getItem('fallback_admin_profile');
@@ -64,6 +142,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 try {
                     const parsedProfile = JSON.parse(fallbackProfile);
                     if (parsedProfile.id === userId) {
+                        console.log('Using fallback admin profile due to error');
                         return parsedProfile;
                     }
                 } catch (parseError) {
@@ -146,6 +225,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 if (!isMounted) return;
 
                 console.log('Auth state change:', event, session?.user?.id);
+                logAuthState(`Auth Event: ${event}`, session?.user, userProfile, session);
 
                 // Handle different auth events
                 if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
@@ -161,9 +241,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     setUser(session?.user ?? null);
 
                     if (session?.user) {
-                        const profile = await loadUserProfile(session.user.id);
-                        if (isMounted) {
-                            setUserProfile(profile);
+                        // For token refresh, only reload profile if we don't have one or if it's for a different user
+                        if (event === 'TOKEN_REFRESHED' && userProfile && userProfile.id === session.user.id) {
+
+                            // Keep existing profile, don't reload unless necessary
+                        } else {
+                            console.log('Loading user profile for', event);
+                            const profile = await loadUserProfile(session.user.id);
+                            if (isMounted) {
+                                setUserProfile(profile);
+                            }
                         }
                     } else {
                         setUserProfile(null);

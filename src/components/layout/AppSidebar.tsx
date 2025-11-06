@@ -69,20 +69,10 @@ const navItems: NavItem[] = [
         roles: ['staff', 'admin'],
         path: '/my-bookings'
     },
-];
-
-const adminNavItems: NavItem[] = [
-    {
-        id: 'admin-dashboard',
-        label: 'Admin Dashboard',
-        icon: BarChart3,
-        roles: ['admin'],
-        path: '/admin/dashboard'
-    },
     {
         id: 'admin-rooms',
         label: 'Manage Rooms',
-        icon: Building2,
+        icon: Settings,
         roles: ['admin'],
         path: '/admin/rooms'
     },
@@ -143,8 +133,13 @@ export const AppSidebar: React.FC = () => {
         item.roles.includes(userProfile?.role || 'staff')
     );
 
-    const visibleAdminItems = adminNavItems.filter(item =>
-        item.roles.includes(userProfile?.role || 'staff')
+    // Separate staff and admin items for better organization
+    const staffItems = visibleNavItems.filter(item =>
+        ['dashboard', 'rooms', 'my-bookings'].includes(item.id)
+    );
+
+    const adminItems = visibleNavItems.filter(item =>
+        item.id.startsWith('admin-')
     );
 
 
@@ -162,7 +157,7 @@ export const AppSidebar: React.FC = () => {
                     <SidebarGroupLabel>Navigation</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {visibleNavItems.map((item) => {
+                            {staffItems.map((item) => {
                                 const Icon = item.icon;
                                 const isActive = location.pathname === item.path;
 
@@ -183,14 +178,14 @@ export const AppSidebar: React.FC = () => {
                     </SidebarGroupContent>
                 </SidebarGroup>
 
-                {visibleAdminItems.length > 0 && (
+                {adminItems.length > 0 && (
                     <>
                         <SidebarSeparator />
                         <SidebarGroup>
                             <SidebarGroupLabel>Administration</SidebarGroupLabel>
                             <SidebarGroupContent>
                                 <SidebarMenu>
-                                    {visibleAdminItems.map((item) => {
+                                    {adminItems.map((item) => {
                                         const Icon = item.icon;
                                         const isActive = location.pathname === item.path;
 

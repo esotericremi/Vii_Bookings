@@ -15,7 +15,7 @@ export const AdminNavigation: React.FC<AdminNavigationProps> = ({ className }) =
     const navigationItems = [
         {
             title: 'Dashboard',
-            href: '/dashboard',
+            href: '/',
             icon: Home,
             description: 'Overview and quick actions'
         },

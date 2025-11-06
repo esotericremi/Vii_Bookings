@@ -318,7 +318,7 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
 
     if (isLoading) {
         return (
-            <div className={`space-y-6 ${className}`}>
+            <div className={`space-y-8 ${className}`}>
                 {/* Header skeleton */}
                 <div className="flex items-center justify-between">
                     <div className="space-y-2">
@@ -329,14 +329,14 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
                 </div>
 
                 {/* Stats cards skeleton */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                     {Array.from({ length: 5 }).map((_, index) => (
                         <StatsCardSkeleton key={index} />
                     ))}
                 </div>
 
                 {/* Filters skeleton */}
-                <div className="p-4 border rounded-lg">
+                <div className="p-6 border rounded-lg">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                         {Array.from({ length: 6 }).map((_, index) => (
                             <div key={index} className="h-10 bg-muted animate-pulse rounded" />
@@ -354,7 +354,7 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
         <LoadingTransition
             isLoading={isLoading}
             fallback={
-                <div className={`space-y-6 ${className}`}>
+                <div className={`space-y-8 ${className}`}>
                     {/* Header skeleton */}
                     <div className="flex items-center justify-between">
                         <div className="space-y-2">
@@ -365,14 +365,14 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
                     </div>
 
                     {/* Stats cards skeleton */}
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                         {Array.from({ length: 5 }).map((_, index) => (
                             <StatsCardSkeleton key={index} />
                         ))}
                     </div>
 
                     {/* Filters skeleton */}
-                    <div className="p-4 border rounded-lg">
+                    <div className="p-6 border rounded-lg">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                             {Array.from({ length: 6 }).map((_, index) => (
                                 <div key={index} className="h-10 bg-muted animate-pulse rounded" />
@@ -384,18 +384,18 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
                     <BookingTableSkeleton rows={10} />
                 </div>
             }
-            className={`space-y-6 ${className}`}
+            className={`space-y-8 ${className}`}
         >
             <FadeIn>
                 {/* Header */}
-                <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold">Booking Management</h1>
-                        <p className="text-muted-foreground mt-1">
+                        <p className="text-muted-foreground mt-2">
                             Manage all bookings, resolve conflicts, and oversee room utilization
                         </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <Button variant="outline" onClick={() => refetch()}>
                             <RefreshCw className="h-4 w-4 mr-2" />
                             Refresh
@@ -431,345 +431,357 @@ export const BookingManagement: React.FC<BookingManagementProps> = ({ className 
                     </div>
                 </header>
                 {/* Statistics Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Total</p>
-                                    <p className="text-2xl font-bold">{stats.total}</p>
+                <section className="mt-8">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                        <Card className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Total</p>
+                                        <p className="text-2xl font-bold">{stats.total}</p>
+                                    </div>
+                                    <Calendar className="h-8 w-8 text-muted-foreground" />
                                 </div>
-                                <Calendar className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Confirmed</p>
-                                    <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Confirmed</p>
+                                        <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
+                                    </div>
+                                    <CheckCircle className="h-8 w-8 text-green-600" />
                                 </div>
-                                <CheckCircle className="h-8 w-8 text-green-600" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
-                                    <p className="text-2xl font-bold text-red-600">{stats.cancelled}</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
+                                        <p className="text-2xl font-bold text-red-600">{stats.cancelled}</p>
+                                    </div>
+                                    <XCircle className="h-8 w-8 text-red-600" />
                                 </div>
-                                <XCircle className="h-8 w-8 text-red-600" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                                    <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                                        <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                                    </div>
+                                    <Clock className="h-8 w-8 text-yellow-600" />
                                 </div>
-                                <Clock className="h-8 w-8 text-yellow-600" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Admin Overrides</p>
-                                    <p className="text-2xl font-bold text-orange-600">{stats.adminOverrides}</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground">Admin Overrides</p>
+                                        <p className="text-2xl font-bold text-orange-600">{stats.adminOverrides}</p>
+                                    </div>
+                                    <AlertTriangle className="h-8 w-8 text-orange-600" />
                                 </div>
-                                <AlertTriangle className="h-8 w-8 text-orange-600" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </section>
                 {/* Filters */}
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search bookings..."
-                                    value={filters.search}
-                                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                                    className="pl-10"
-                                />
-                            </div>
+                <section className="mt-8">
+                    <Card className="shadow-sm">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                                <Filter className="h-5 w-5" />
+                                Filters & Search
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search bookings..."
+                                        value={filters.search}
+                                        onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                                        className="pl-10"
+                                    />
+                                </div>
 
-                            <Select
-                                value={filters.status}
-                                onValueChange={(value: any) => setFilters(prev => ({ ...prev, status: value }))}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            <Select
-                                value={filters.dateRange}
-                                onValueChange={(value: any) => setFilters(prev => ({ ...prev, dateRange: value }))}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Date Range" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Time</SelectItem>
-                                    <SelectItem value="today">Today</SelectItem>
-                                    <SelectItem value="upcoming">Upcoming</SelectItem>
-                                    <SelectItem value="past">Past</SelectItem>
-                                    <SelectItem value="this_week">This Week</SelectItem>
-                                    <SelectItem value="this_month">This Month</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            <Select
-                                value={filters.room}
-                                onValueChange={(value) => setFilters(prev => ({ ...prev, room: value }))}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Room" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Rooms</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            <Select
-                                value={filters.sortBy}
-                                onValueChange={(value: any) => setFilters(prev => ({ ...prev, sortBy: value }))}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Sort By" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="start_time">Start Time</SelectItem>
-                                    <SelectItem value="created_at">Created</SelectItem>
-                                    <SelectItem value="title">Title</SelectItem>
-                                    <SelectItem value="room">Room</SelectItem>
-                                    <SelectItem value="user">User</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            <Button
-                                variant="outline"
-                                onClick={() => setFilters(prev => ({
-                                    ...prev,
-                                    sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc'
-                                }))}
-                            >
-                                <ArrowUpDown className="h-4 w-4 mr-2" />
-                                {filters.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-                {/* Bookings Table */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <span>Bookings ({filteredBookings.length})</span>
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    checked={selectedBookings.length === filteredBookings.length && filteredBookings.length > 0}
-                                    onCheckedChange={handleSelectAll}
-                                    aria-label={`Select all ${filteredBookings.length} bookings`}
-                                    aria-describedby="select-all-description"
-                                />
-                                <span
-                                    id="select-all-description"
-                                    className="text-sm text-muted-foreground"
+                                <Select
+                                    value={filters.status}
+                                    onValueChange={(value: any) => setFilters(prev => ({ ...prev, status: value }))}
                                 >
-                                    Select All
-                                </span>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Status</SelectItem>
+                                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <Select
+                                    value={filters.dateRange}
+                                    onValueChange={(value: any) => setFilters(prev => ({ ...prev, dateRange: value }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Date Range" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Time</SelectItem>
+                                        <SelectItem value="today">Today</SelectItem>
+                                        <SelectItem value="upcoming">Upcoming</SelectItem>
+                                        <SelectItem value="past">Past</SelectItem>
+                                        <SelectItem value="this_week">This Week</SelectItem>
+                                        <SelectItem value="this_month">This Month</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <Select
+                                    value={filters.room}
+                                    onValueChange={(value) => setFilters(prev => ({ ...prev, room: value }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Room" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Rooms</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <Select
+                                    value={filters.sortBy}
+                                    onValueChange={(value: any) => setFilters(prev => ({ ...prev, sortBy: value }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Sort By" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="start_time">Start Time</SelectItem>
+                                        <SelectItem value="created_at">Created</SelectItem>
+                                        <SelectItem value="title">Title</SelectItem>
+                                        <SelectItem value="room">Room</SelectItem>
+                                        <SelectItem value="user">User</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setFilters(prev => ({
+                                        ...prev,
+                                        sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc'
+                                    }))}
+                                >
+                                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                                    {filters.sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                                </Button>
                             </div>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="overflow-x-auto">
-                            <Table
-                                role="table"
-                                aria-label="Bookings management table"
-                                aria-describedby="table-description"
-                            >
-                                <caption id="table-description" className="sr-only">
-                                    Table showing {filteredBookings.length} bookings with options to edit, reassign, or cancel each booking. Use arrow keys to navigate and Enter to activate buttons.
-                                </caption>
-                                <TableHeader>
-                                    <TableRow role="row">
-                                        <TableHead className="w-12" role="columnheader">
-                                            <span className="sr-only">Select booking</span>
-                                        </TableHead>
-                                        <TableHead role="columnheader">
-                                            <button
-                                                className="flex items-center gap-1 hover:text-foreground transition-colors"
-                                                onClick={() => setFilters(prev => ({
-                                                    ...prev,
-                                                    sortBy: 'title',
-                                                    sortOrder: prev.sortBy === 'title' && prev.sortOrder === 'asc' ? 'desc' : 'asc'
-                                                }))}
-                                                aria-label={getAriaLabel.sortButton('title', filters.sortBy === 'title' ? filters.sortOrder : null)}
-                                            >
-                                                Title
-                                                <ArrowUpDown className="h-3 w-3" />
-                                            </button>
-                                        </TableHead>
-                                        <TableHead>Room</TableHead>
-                                        <TableHead>User</TableHead>
-                                        <TableHead>Date & Time</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Created</TableHead>
-                                        <TableHead className="w-12">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredBookings.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                                No bookings found matching your filters
-                                            </TableCell>
+                        </CardContent>
+                    </Card>
+                </section>
+                {/* Bookings Table */}
+                <section className="mt-8">
+                    <Card className="shadow-sm">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <span className="text-lg font-semibold">Bookings ({filteredBookings.length})</span>
+                                <div className="flex items-center gap-3">
+                                    <Checkbox
+                                        checked={selectedBookings.length === filteredBookings.length && filteredBookings.length > 0}
+                                        onCheckedChange={handleSelectAll}
+                                        aria-label={`Select all ${filteredBookings.length} bookings`}
+                                        aria-describedby="select-all-description"
+                                    />
+                                    <span
+                                        id="select-all-description"
+                                        className="text-sm text-muted-foreground"
+                                    >
+                                        Select All
+                                    </span>
+                                </div>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table
+                                    role="table"
+                                    aria-label="Bookings management table"
+                                    aria-describedby="table-description"
+                                >
+                                    <caption id="table-description" className="sr-only">
+                                        Table showing {filteredBookings.length} bookings with options to edit, reassign, or cancel each booking. Use arrow keys to navigate and Enter to activate buttons.
+                                    </caption>
+                                    <TableHeader>
+                                        <TableRow role="row">
+                                            <TableHead className="w-12" role="columnheader">
+                                                <span className="sr-only">Select booking</span>
+                                            </TableHead>
+                                            <TableHead role="columnheader">
+                                                <button
+                                                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                                    onClick={() => setFilters(prev => ({
+                                                        ...prev,
+                                                        sortBy: 'title',
+                                                        sortOrder: prev.sortBy === 'title' && prev.sortOrder === 'asc' ? 'desc' : 'asc'
+                                                    }))}
+                                                    aria-label={getAriaLabel.sortButton('title', filters.sortBy === 'title' ? filters.sortOrder : null)}
+                                                >
+                                                    Title
+                                                    <ArrowUpDown className="h-3 w-3" />
+                                                </button>
+                                            </TableHead>
+                                            <TableHead>Room</TableHead>
+                                            <TableHead>User</TableHead>
+                                            <TableHead>Date & Time</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Created</TableHead>
+                                            <TableHead className="w-12">Actions</TableHead>
                                         </TableRow>
-                                    ) : (
-                                        filteredBookings.map((booking) => {
-                                            const statusInfo = getBookingStatus(booking);
-                                            const isSelected = selectedBookings.includes(booking.id);
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredBookings.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                                    No bookings found matching your filters
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            filteredBookings.map((booking) => {
+                                                const statusInfo = getBookingStatus(booking);
+                                                const isSelected = selectedBookings.includes(booking.id);
 
-                                            return (
-                                                <TableRow key={booking.id} className={isSelected ? 'bg-muted/50' : ''}>
-                                                    <TableCell>
-                                                        <Checkbox
-                                                            checked={isSelected}
-                                                            onCheckedChange={(checked) =>
-                                                                handleSelectBooking(booking.id, checked as boolean)
-                                                            }
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div>
-                                                            <div className="font-medium">{booking.title}</div>
-                                                            {booking.description && (
-                                                                <div className="text-sm text-muted-foreground truncate max-w-xs">
-                                                                    {booking.description}
-                                                                </div>
-                                                            )}
-                                                            {booking.is_admin_override && (
-                                                                <Badge variant="outline" className="mt-1 text-xs">
-                                                                    <AlertTriangle className="h-3 w-3 mr-1" />
-                                                                    Admin Override
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                                                return (
+                                                    <TableRow key={booking.id} className={isSelected ? 'bg-muted/50' : ''}>
+                                                        <TableCell>
+                                                            <Checkbox
+                                                                checked={isSelected}
+                                                                onCheckedChange={(checked) =>
+                                                                    handleSelectBooking(booking.id, checked as boolean)
+                                                                }
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>
                                                             <div>
-                                                                <div className="font-medium">{booking.room?.name}</div>
-                                                                <div className="text-sm text-muted-foreground">
-                                                                    {booking.room?.location} • Floor {booking.room?.floor}
+                                                                <div className="font-medium">{booking.title}</div>
+                                                                {booking.description && (
+                                                                    <div className="text-sm text-muted-foreground truncate max-w-xs">
+                                                                        {booking.description}
+                                                                    </div>
+                                                                )}
+                                                                {booking.is_admin_override && (
+                                                                    <Badge variant="outline" className="mt-1 text-xs">
+                                                                        <AlertTriangle className="h-3 w-3 mr-1" />
+                                                                        Admin Override
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-2">
+                                                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                                                <div>
+                                                                    <div className="font-medium">{booking.room?.name}</div>
+                                                                    <div className="text-sm text-muted-foreground">
+                                                                        {booking.room?.location} • Floor {booking.room?.floor}
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <User className="h-4 w-4 text-muted-foreground" />
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-2">
+                                                                <User className="h-4 w-4 text-muted-foreground" />
+                                                                <div>
+                                                                    <div className="font-medium">{booking.user?.full_name}</div>
+                                                                    <div className="text-sm text-muted-foreground">
+                                                                        {booking.user?.email}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
                                                             <div>
-                                                                <div className="font-medium">{booking.user?.full_name}</div>
+                                                                <div className="font-medium">
+                                                                    {format(new Date(booking.start_time), 'MMM dd, yyyy')}
+                                                                </div>
                                                                 <div className="text-sm text-muted-foreground">
-                                                                    {booking.user?.email}
+                                                                    {format(new Date(booking.start_time), 'h:mm a')} - {format(new Date(booking.end_time), 'h:mm a')}
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div>
-                                                            <div className="font-medium">
-                                                                {format(new Date(booking.start_time), 'MMM dd, yyyy')}
-                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={statusInfo.color as any}>
+                                                                {statusInfo.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
                                                             <div className="text-sm text-muted-foreground">
-                                                                {format(new Date(booking.start_time), 'h:mm a')} - {format(new Date(booking.end_time), 'h:mm a')}
+                                                                {format(new Date(booking.created_at), 'MMM dd, h:mm a')}
                                                             </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant={statusInfo.color as any}>
-                                                            {statusInfo.status}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="text-sm text-muted-foreground">
-                                                            {format(new Date(booking.created_at), 'MMM dd, h:mm a')}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                                <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
-                                                                    <Edit className="h-4 w-4 mr-2" />
-                                                                    Edit Booking
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem
-                                                                    onClick={() => {
-                                                                        setReassignTarget({ bookingId: booking.id, newRoomId: '' });
-                                                                        setShowReassignDialog(true);
-                                                                    }}
-                                                                >
-                                                                    <Users className="h-4 w-4 mr-2" />
-                                                                    Reassign Room
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleCancelBooking(booking.id, 'Cancelled by administrator')}
-                                                                    className="text-destructive"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                                    Cancel Booking
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon">
+                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                                    <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
+                                                                        <Edit className="h-4 w-4 mr-2" />
+                                                                        Edit Booking
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => {
+                                                                            setReassignTarget({ bookingId: booking.id, newRoomId: '' });
+                                                                            setShowReassignDialog(true);
+                                                                        }}
+                                                                    >
+                                                                        <Users className="h-4 w-4 mr-2" />
+                                                                        Reassign Room
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleCancelBooking(booking.id, 'Cancelled by administrator')}
+                                                                        className="text-destructive"
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                                        Cancel Booking
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
 
-                    {/* Pagination */}
-                    {totalCount > 0 && (
-                        <div className="px-6 py-4 border-t">
-                            <Pagination
-                                currentPage={pagination.page}
-                                totalPages={Math.ceil(totalCount / pagination.pageSize)}
-                                pageSize={pagination.pageSize}
-                                totalItems={totalCount}
-                                onPageChange={paginationActions.setPage}
-                                onPageSizeChange={paginationActions.setPageSize}
-                                pageSizeOptions={[10, 20, 50, 100]}
-                            />
-                        </div>
-                    )}
-                </Card>
+                        {/* Pagination */}
+                        {totalCount > 0 && (
+                            <div className="px-6 py-6 border-t bg-gray-50/50">
+                                <Pagination
+                                    currentPage={pagination.page}
+                                    totalPages={Math.ceil(totalCount / pagination.pageSize)}
+                                    pageSize={pagination.pageSize}
+                                    totalItems={totalCount}
+                                    onPageChange={paginationActions.setPage}
+                                    onPageSizeChange={paginationActions.setPageSize}
+                                    pageSizeOptions={[10, 20, 50, 100]}
+                                />
+                            </div>
+                        )}
+                    </Card>
+                </section>
                 {/* Edit Booking Dialog */}
                 {editingBooking && (
                     <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>

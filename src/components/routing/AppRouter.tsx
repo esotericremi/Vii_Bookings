@@ -114,7 +114,7 @@ export const AppRouter: React.FC = () => {
                 path="/admin"
                 element={
                     <AdminRoute>
-                        <Navigate to="/admin/dashboard" replace />
+                        <Navigate to="/" replace />
                     </AdminRoute>
                 }
             />
@@ -123,11 +123,7 @@ export const AppRouter: React.FC = () => {
                 path="/admin/dashboard"
                 element={
                     <AdminRoute>
-                        <Layout>
-                            <Suspense fallback={<LazyLoadingFallback />}>
-                                <AdminDashboard />
-                            </Suspense>
-                        </Layout>
+                        <Navigate to="/" replace />
                     </AdminRoute>
                 }
             />

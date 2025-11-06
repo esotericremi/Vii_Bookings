@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRealTimeAvailability } from "@/hooks/useRealTimeAvailability";
-import { useRealTimeSync } from "@/components/shared/RealTimeSyncProvider";
+import { useRealTimeSyncSafe } from "@/components/shared/RealTimeSyncProvider";
 import type { RoomWithAvailability } from "@/types/room";
 
 interface RoomCardProps {
@@ -34,7 +34,9 @@ export const RoomCard = ({ room, onBook, onSelect, isSelected = false, showAvail
   });
 
   // Enhanced real-time sync information
-  const { connectionStatus, syncUpdates } = useRealTimeSync();
+  const realTimeSync = useRealTimeSyncSafe();
+  const connectionStatus = realTimeSync?.connectionStatus || 'disconnected';
+  const syncUpdates = realTimeSync?.syncUpdates || 0;
 
   // Check if this room has recent sync updates
   const recentRoomUpdates = syncUpdates.filter(update =>

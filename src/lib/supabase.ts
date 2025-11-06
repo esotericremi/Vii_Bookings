@@ -34,12 +34,65 @@ export const getCurrentUser = async () => {
     return user;
 };
 
-// Helper function to get user profile
-export const getUserProfile = async (userId: string) => {
+// Connection health status
+let connectionHealthy = true;
+let lastHealthCheck = 0;
+
+// Helper function to check database connection health
+export const checkDatabaseHealth = async (): Promise<boolean> => {
+    const now = Date.now();
+    // Only check health every 30 seconds to avoid spam
+    if (now - lastHealthCheck < 30000) {
+        return connectionHealthy;
+    }
+
     try {
-        // Add timeout protection
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('getUserProfile timeout after 8 seconds')), 8000);
+            setTimeout(() => reject(new Error('Health check timeout')), 3000);
+        });
+
+        const healthPromise = supabase
+            .from('users')
+            .select('count')
+            .limit(1);
+
+        await Promise.race([healthPromise, timeoutPromise]);
+        connectionHealthy = true;
+        lastHealthCheck = now;
+        console.log('✅ Database connection healthy');
+        return true;
+    } catch (error) {
+        connectionHealthy = false;
+        lastHealthCheck = now;
+        console.warn('❌ Database connection unhealthy:', error);
+        return false;
+    }
+};
+
+// Helper function to get user profile with aggressive fallback
+export const getUserProfile = async (userId: string, useCache = true): Promise<any> => {
+    const cacheKey = `user_profile_${userId}`;
+
+    // If we're using cache and connection is unhealthy, return cached data immediately
+    if (useCache && !connectionHealthy) {
+        const cachedProfile = localStorage.getItem(cacheKey);
+        if (cachedProfile) {
+            try {
+                const { profile } = JSON.parse(cachedProfile);
+
+                return profile;
+            } catch (error) {
+                console.warn('Error parsing cached profile:', error);
+            }
+        }
+    }
+
+    try {
+        // Much shorter timeout for faster fallback
+        const timeoutMs = 5000; // Reduced to 5 seconds
+
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(`getUserProfile timeout after ${timeoutMs}ms`)), timeoutMs);
         });
 
         const queryPromise = supabase
@@ -52,12 +105,53 @@ export const getUserProfile = async (userId: string) => {
 
         if (error) {
             console.error('Error getting user profile:', error);
+            connectionHealthy = false;
+
+            // Immediately fall back to cache
+            if (useCache) {
+                const cachedProfile = localStorage.getItem(cacheKey);
+                if (cachedProfile) {
+                    try {
+                        const { profile } = JSON.parse(cachedProfile);
+
+                        return profile;
+                    } catch (parseError) {
+                        console.warn('Error parsing cached profile:', parseError);
+                    }
+                }
+            }
+
             return null;
+        }
+
+        // Success - update cache and connection status
+        connectionHealthy = true;
+        if (data && useCache) {
+            localStorage.setItem(cacheKey, JSON.stringify({
+                profile: data,
+                timestamp: Date.now()
+            }));
         }
 
         return data;
     } catch (error) {
         console.error('getUserProfile - Timeout or error:', error);
+        connectionHealthy = false;
+
+        // Immediately fall back to cache
+        if (useCache) {
+            const cachedProfile = localStorage.getItem(cacheKey);
+            if (cachedProfile) {
+                try {
+                    const { profile } = JSON.parse(cachedProfile);
+
+                    return profile;
+                } catch (parseError) {
+                    console.warn('Error parsing cached profile:', parseError);
+                }
+            }
+        }
+
         return null;
     }
 };
