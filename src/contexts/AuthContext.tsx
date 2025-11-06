@@ -38,12 +38,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [authTimeout, setAuthTimeout] = useState<NodeJS.Timeout | null>(null);
 
+    // Helper function to handle profile loading with better error handling
+    const loadUserProfile = async (userId: string): Promise<UserProfile | null> => {
+        try {
+            const profile = await getUserProfile(userId);
+            if (profile) {
+                return profile;
+            }
+
+            // Check for fallback admin profile
+            const fallbackProfile = localStorage.getItem('fallback_admin_profile');
+            if (fallbackProfile) {
+                const parsedProfile = JSON.parse(fallbackProfile);
+                if (parsedProfile.id === userId) {
+                    return parsedProfile;
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error('Error loading user profile:', error);
+
+            // Check for fallback admin profile on error
+            const fallbackProfile = localStorage.getItem('fallback_admin_profile');
+            if (fallbackProfile) {
+                try {
+                    const parsedProfile = JSON.parse(fallbackProfile);
+                    if (parsedProfile.id === userId) {
+                        return parsedProfile;
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing fallback profile:', parseError);
+                }
+            }
+            return null;
+        }
+    };
+
     useEffect(() => {
+        let isMounted = true;
+        let refreshInterval: NodeJS.Timeout | null = null;
+
         // Set a timeout to prevent infinite loading
         const timeout = setTimeout(() => {
-            console.warn('Auth loading timeout reached, setting loading to false');
-            setLoading(false);
-        }, 5000); // 5 second timeout
+            if (isMounted) {
+                console.warn('Auth loading timeout reached, setting loading to false');
+                setLoading(false);
+            }
+        }, 10000); // Increased to 10 seconds
 
         setAuthTimeout(timeout);
 
@@ -52,124 +93,130 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             try {
                 const { data: { session }, error } = await supabase.auth.getSession();
 
+                if (!isMounted) return;
+
                 if (error) {
                     console.error('Error getting session:', error);
-                } else {
-                    setSession(session);
-                    setUser(session?.user ?? null);
+                    setLoading(false);
+                    return;
+                }
 
-                    if (session?.user) {
-                        try {
-                            const profile = await getUserProfile(session.user.id);
+                setSession(session);
+                setUser(session?.user ?? null);
 
-                            if (profile) {
-                                setUserProfile(profile);
-                            } else {
-                                // Check for fallback admin profile
-                                const fallbackProfile = localStorage.getItem('fallback_admin_profile');
-                                if (fallbackProfile) {
-                                    const parsedProfile = JSON.parse(fallbackProfile);
-                                    if (parsedProfile.id === session.user.id) {
-
-                                        setUserProfile(parsedProfile);
-                                    }
-                                }
-                            }
-                        } catch (profileError) {
-                            console.error('AuthContext - Error getting user profile:', profileError);
-
-                            // Check for fallback admin profile on error
-                            const fallbackProfile = localStorage.getItem('fallback_admin_profile');
-                            if (fallbackProfile) {
-                                const parsedProfile = JSON.parse(fallbackProfile);
-                                if (parsedProfile.id === session.user.id) {
-
-                                    setUserProfile(parsedProfile);
-                                } else {
-                                    setUserProfile(null);
-                                }
-                            } else {
-                                setUserProfile(null);
-                            }
-                        }
+                if (session?.user) {
+                    const profile = await loadUserProfile(session.user.id);
+                    if (isMounted) {
+                        setUserProfile(profile);
                     }
                 }
             } catch (error) {
                 console.error('Error in getInitialSession:', error);
             } finally {
-                clearTimeout(timeout);
-                setLoading(false);
+                if (isMounted) {
+                    clearTimeout(timeout);
+                    setLoading(false);
+                }
             }
         };
 
         getInitialSession();
 
-        // Listen for auth changes
+        // Set up periodic session refresh (every 50 minutes)
+        refreshInterval = setInterval(async () => {
+            if (isMounted) {
+                try {
+                    const { data: { session }, error } = await supabase.auth.refreshSession();
+                    if (error) {
+                        console.error('Error refreshing session:', error);
+                    } else if (session) {
+                        console.log('Session refreshed successfully');
+                        setSession(session);
+                        setUser(session.user);
+                    }
+                } catch (error) {
+                    console.error('Unexpected error refreshing session:', error);
+                }
+            }
+        }, 50 * 60 * 1000); // 50 minutes
+
+        // Listen for auth changes with improved handling
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                setSession(session);
-                setUser(session?.user ?? null);
+                if (!isMounted) return;
 
-                if (session?.user) {
-                    try {
-                        const profile = await getUserProfile(session.user.id);
+                console.log('Auth state change:', event, session?.user?.id);
 
-                        if (profile) {
-                            setUserProfile(profile);
-                        } else {
-                            // Check for fallback admin profile
-                            const fallbackProfile = localStorage.getItem('fallback_admin_profile');
-                            if (fallbackProfile) {
-                                const parsedProfile = JSON.parse(fallbackProfile);
-                                if (parsedProfile.id === session.user.id) {
-                                    setUserProfile(parsedProfile);
-                                } else {
-                                    setUserProfile(null);
-                                }
-                            } else {
-                                setUserProfile(null);
-                            }
-                        }
-                    } catch (error) {
-                        console.error('AuthContext - Error fetching profile:', error);
-
-                        // Check for fallback admin profile on error
-                        const fallbackProfile = localStorage.getItem('fallback_admin_profile');
-                        if (fallbackProfile) {
-                            const parsedProfile = JSON.parse(fallbackProfile);
-                            if (parsedProfile.id === session.user.id) {
-
-                                setUserProfile(parsedProfile);
-                            } else {
-                                setUserProfile(null);
-                            }
-                        } else {
-                            setUserProfile(null);
-                        }
-                    }
-                } else {
+                // Handle different auth events
+                if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+                    setSession(null);
+                    setUser(null);
                     setUserProfile(null);
+                    setLoading(false);
+                    return;
                 }
 
-                setLoading(false);
+                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                    setSession(session);
+                    setUser(session?.user ?? null);
+
+                    if (session?.user) {
+                        const profile = await loadUserProfile(session.user.id);
+                        if (isMounted) {
+                            setUserProfile(profile);
+                        }
+                    } else {
+                        setUserProfile(null);
+                    }
+                }
+
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         );
 
         return () => {
+            isMounted = false;
             subscription.unsubscribe();
             if (authTimeout) {
                 clearTimeout(authTimeout);
+            }
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
             }
         };
     }, []);
 
     const signIn = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
 
-        return { error };
+            if (error) {
+                console.error('Sign in error:', error);
+                return { error };
+            }
+
+            // Ensure session is properly set
+            if (data.session) {
+                setSession(data.session);
+                setUser(data.user);
+
+                // Load user profile
+                if (data.user) {
+                    const profile = await loadUserProfile(data.user.id);
+                    setUserProfile(profile);
+                }
+            }
+
+            return { error: null };
+        } catch (error) {
+            console.error('Unexpected sign in error:', error);
+            return { error: error as AuthError };
+        }
     };
 
     const signUp = async (email: string, password: string, fullName: string) => {

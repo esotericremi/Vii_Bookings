@@ -21,6 +21,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     },
 });
 
+// Type-safe table references
+export type SupabaseClient = typeof supabase;
+
 // Helper function to get the current user
 export const getCurrentUser = async () => {
     const { data: { user }, error } = await supabase.auth.getUser();

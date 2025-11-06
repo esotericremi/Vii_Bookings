@@ -68,19 +68,50 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({ room, open, onOpenChang
     const form = useForm<RoomFormValues>({
         resolver: zodResolver(roomFormSchema),
         defaultValues: {
-            name: room?.name || '',
-            capacity: room?.capacity || 1,
-            location: room?.location || '',
-            floor: room?.floor || '',
-            equipment: room?.equipment || [],
-            description: room?.description || '',
-            image_url: room?.image_url || '',
-            is_active: room?.is_active ?? true,
+            name: '',
+            capacity: 1,
+            location: '',
+            floor: '',
+            equipment: [],
+            description: '',
+            image_url: '',
+            is_active: true,
         },
     });
 
     const isEditing = !!room;
     const isLoading = createRoom.isPending || updateRoom.isPending || imageUploading;
+
+    // Reset form when room changes or dialog opens
+    React.useEffect(() => {
+        if (open) {
+            if (room) {
+                // Editing existing room - populate form with room data
+                form.reset({
+                    name: room.name || '',
+                    capacity: room.capacity || 1,
+                    location: room.location || '',
+                    floor: room.floor || '',
+                    equipment: room.equipment || [],
+                    description: room.description || '',
+                    image_url: room.image_url || '',
+                    is_active: room.is_active ?? true,
+                });
+            } else {
+                // Creating new room - reset to defaults
+                form.reset({
+                    name: '',
+                    capacity: 1,
+                    location: '',
+                    floor: '',
+                    equipment: [],
+                    description: '',
+                    image_url: '',
+                    is_active: true,
+                });
+            }
+        }
+    }, [room, open, form]);
 
     const onSubmit = async (values: RoomFormValues) => {
         try {
