@@ -68,6 +68,13 @@ export const SystemSettings: React.FC = () => {
         updateSettings.mutate({
             ...data,
             company_logo_url: data.company_logo_url || null
+        }, {
+            onSuccess: () => {
+                // Force a page reload to apply new branding immediately
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
         });
     };
 
@@ -87,7 +94,18 @@ export const SystemSettings: React.FC = () => {
         return (
             <Card>
                 <CardContent className="pt-6">
-                    <p className="text-destructive">Failed to load system settings</p>
+                    <div className="text-center space-y-4">
+                        <p className="text-destructive">Failed to load system settings</p>
+                        <p className="text-sm text-muted-foreground">
+                            Error: {settingsError.message}
+                        </p>
+                        <Button
+                            variant="outline"
+                            onClick={() => window.location.reload()}
+                        >
+                            Retry
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -271,21 +289,56 @@ export const SystemSettings: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {watch('company_logo_url') && (
-                                    <div className="space-y-2">
-                                        <Label>Logo Preview</Label>
-                                        <div className="border rounded-lg p-4 bg-muted/50">
-                                            <img
-                                                src={watch('company_logo_url')}
-                                                alt="Company Logo Preview"
-                                                className="max-h-16 max-w-48 object-contain"
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                }}
+                                <div className="space-y-4 md:col-span-2">
+                                    <Label>Branding Preview</Label>
+                                    <div className="border rounded-lg p-4 bg-muted/50 space-y-4">
+                                        {/* Logo Preview */}
+                                        <div className="flex items-center gap-3">
+                                            {watch('company_logo_url') ? (
+                                                <img
+                                                    src={watch('company_logo_url')}
+                                                    alt="Company Logo Preview"
+                                                    className="h-8 w-auto object-contain"
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div
+                                                    className="h-8 w-8 rounded flex items-center justify-center text-white"
+                                                    style={{ backgroundColor: watch('theme_color') }}
+                                                >
+                                                    <Palette className="h-4 w-4" />
+                                                </div>
+                                            )}
+                                            <span className="font-bold text-lg">
+                                                {watch('company_name') || 'Company Name'}
+                                            </span>
+                                        </div>
+
+                                        {/* Theme Color Preview */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-muted-foreground">Theme Color:</span>
+                                            <div
+                                                className="h-6 w-6 rounded border"
+                                                style={{ backgroundColor: watch('theme_color') }}
                                             />
+                                            <span className="text-sm font-mono">{watch('theme_color')}</span>
+                                        </div>
+
+                                        {/* Sample Button Preview */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-muted-foreground">Sample Button:</span>
+                                            <button
+                                                className="px-4 py-2 rounded text-white text-sm font-medium"
+                                                style={{ backgroundColor: watch('theme_color') }}
+                                                disabled
+                                            >
+                                                Book Room
+                                            </button>
                                         </div>
                                     </div>
-                                )}
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>

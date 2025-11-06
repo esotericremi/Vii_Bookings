@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
 import type { BookingWithRelations } from '@/types/booking';
 
 interface AvailabilityTimelineProps {
@@ -36,6 +37,15 @@ export const AvailabilityTimeline = ({
         const startHour = workingHours.start;
         const endHour = workingHours.end;
 
+        // Filter bookings for this room and date
+        const roomBookings = bookings.filter(booking => {
+            const bookingDate = new Date(booking.start_time);
+            const targetDate = new Date(date);
+            return booking.room_id === roomId &&
+                bookingDate.toDateString() === targetDate.toDateString() &&
+                booking.status === 'confirmed';
+        });
+
         // Create time slots for the day
         for (let hour = startHour; hour < endHour; hour += slotDuration / 60) {
             const startTime = new Date(date);
@@ -44,8 +54,8 @@ export const AvailabilityTimeline = ({
             const endTime = new Date(startTime);
             endTime.setMinutes(endTime.getMinutes() + slotDuration);
 
-            // Check if this slot conflicts with any booking
-            const conflictingBooking = bookings.find(booking => {
+            // Check if this slot conflicts with any confirmed booking
+            const conflictingBooking = roomBookings.find(booking => {
                 const bookingStart = new Date(booking.start_time);
                 const bookingEnd = new Date(booking.end_time);
 
@@ -65,7 +75,7 @@ export const AvailabilityTimeline = ({
         }
 
         return slots;
-    }, [date, bookings, workingHours, slotDuration]);
+    }, [date, bookings, workingHours, slotDuration, roomId]);
 
     const formatTime = (time: Date) => {
         return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -135,10 +145,14 @@ export const AvailabilityTimeline = ({
                                         <div className="text-sm text-muted-foreground">
                                             <div className="font-medium">{slot.booking.title}</div>
                                             {slot.booking.user && (
-                                                <div className="text-xs">
-                                                    by {slot.booking.user.full_name}
+                                                <div className="text-xs flex items-center gap-1">
+                                                    <User className="h-3 w-3" />
+                                                    {slot.booking.user.full_name}
                                                 </div>
                                             )}
+                                            <div className="text-xs">
+                                                {format(new Date(slot.booking.start_time), 'HH:mm')} - {format(new Date(slot.booking.end_time), 'HH:mm')}
+                                            </div>
                                         </div>
                                     )}
 

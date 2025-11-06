@@ -661,7 +661,31 @@ export const settingsQueries = {
         const { data, error } = await db
             .from('system_settings')
             .select('*')
-            .limit(1)
+            .limit(1);
+
+        if (error) throw error;
+
+        // If no settings exist, create default settings
+        if (!data || data.length === 0) {
+            return await settingsQueries.createDefault();
+        }
+
+        return data[0] as SystemSettings;
+    },
+
+    // Create default system settings
+    createDefault: async () => {
+        const { data, error } = await db
+            .from('system_settings')
+            .insert({
+                max_booking_duration: 480,
+                advance_notice_hours: 0,
+                buffer_time_minutes: 0,
+                company_name: 'VII Bookings',
+                company_logo_url: null,
+                theme_color: '#ff304f'
+            })
+            .select()
             .single();
 
         if (error) throw error;
@@ -670,9 +694,16 @@ export const settingsQueries = {
 
     // Update system settings
     update: async (updates: Partial<SystemSettings>) => {
+        // First, get the current settings to ensure we have an ID
+        const currentSettings = await settingsQueries.get();
+
         const { data, error } = await db
             .from('system_settings')
-            .update(updates)
+            .update({
+                ...updates,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', currentSettings.id)
             .select()
             .single();
 

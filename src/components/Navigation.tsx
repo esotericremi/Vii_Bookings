@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Calendar, Users, Settings, Bell, Home, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BrandedHeader } from "@/components/shared/BrandedHeader";
 
 interface NavigationProps {
   activeView: string;
@@ -24,11 +25,9 @@ export const Navigation = ({ activeView, onViewChange, notificationCount }: Navi
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
             <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                RoomBook
-              </h1>
+              <BrandedHeader size="md" />
             </div>
-            
+
             <nav className="hidden md:flex space-x-4">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -39,8 +38,8 @@ export const Navigation = ({ activeView, onViewChange, notificationCount }: Navi
                     onClick={() => onViewChange(item.id)}
                     className={`
                       flex items-center gap-2 transition-all duration-200
-                      ${activeView === item.id 
-                        ? "bg-gradient-primary text-white shadow-lg" 
+                      ${activeView === item.id
+                        ? "bg-gradient-primary text-white shadow-lg"
                         : "hover:bg-secondary"
                       }
                     `}
@@ -57,15 +56,15 @@ export const Navigation = ({ activeView, onViewChange, notificationCount }: Navi
             <Button variant="ghost" size="sm" className="relative">
               <Bell className="h-4 w-4" />
               {notificationCount > 0 && (
-                <Badge 
-                  variant="destructive" 
+                <Badge
+                  variant="destructive"
                   className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center"
                 >
                   {notificationCount}
                 </Badge>
               )}
             </Button>
-            
+
             <div className="text-sm text-muted-foreground">
               Welcome back! 👋
             </div>
@@ -85,8 +84,8 @@ export const Navigation = ({ activeView, onViewChange, notificationCount }: Navi
                 onClick={() => onViewChange(item.id)}
                 className={`
                   flex flex-col items-center gap-1 h-auto py-2 text-xs
-                  ${activeView === item.id 
-                    ? "bg-gradient-primary text-white" 
+                  ${activeView === item.id
+                    ? "bg-gradient-primary text-white"
                     : ""
                   }
                 `}

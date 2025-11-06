@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRooms } from '@/hooks/useRooms';
 import { useBookings } from '@/hooks/useBookings';
 import { format, startOfDay, endOfDay, isAfter, isBefore } from 'date-fns';
+import { BookingsDashboard } from '@/components/dashboard/BookingsDashboard';
 
 
 const Dashboard: React.FC = () => {
@@ -292,90 +293,7 @@ const Dashboard: React.FC = () => {
                 </TabsContent>
 
                 <TabsContent value="bookings" className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                    <span>My Bookings</span>
-                                    <Button variant="outline" size="sm" onClick={() => navigate('/my-bookings')}>
-                                        View All
-                                    </Button>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {bookingsLoading ? (
-                                    <div className="space-y-3">
-                                        {[...Array(3)].map((_, i) => (
-                                            <div key={i} className="h-12 bg-muted rounded animate-pulse" />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {todayBookings
-                                            .filter(booking => booking.user_id === userProfile?.id)
-                                            .slice(0, 5)
-                                            .map((booking) => (
-                                                <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                                    <div>
-                                                        <div className="font-medium">{booking.title}</div>
-                                                        <div className="text-sm text-muted-foreground">
-                                                            {booking.rooms?.name} • {format(new Date(booking.start_time), 'h:mm a')}
-                                                        </div>
-                                                    </div>
-                                                    <Badge variant="outline">{booking.status}</Badge>
-                                                </div>
-                                            ))}
-                                        {todayBookings.filter(booking => booking.user_id === userProfile?.id).length === 0 && (
-                                            <div className="text-center py-4 text-muted-foreground">
-                                                No bookings today
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {isAdmin && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center justify-between">
-                                        <span>All Bookings Today</span>
-                                        <Button variant="outline" size="sm" onClick={() => navigate('/admin/bookings')}>
-                                            Manage All
-                                        </Button>
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {bookingsLoading ? (
-                                        <div className="space-y-3">
-                                            {[...Array(3)].map((_, i) => (
-                                                <div key={i} className="h-12 bg-muted rounded animate-pulse" />
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {todayBookings.slice(0, 5).map((booking) => (
-                                                <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                                    <div>
-                                                        <div className="font-medium">{booking.title}</div>
-                                                        <div className="text-sm text-muted-foreground">
-                                                            {booking.rooms?.name} • {booking.users?.full_name}
-                                                        </div>
-                                                    </div>
-                                                    <Badge variant="outline">{booking.status}</Badge>
-                                                </div>
-                                            ))}
-                                            {todayBookings.length === 0 && (
-                                                <div className="text-center py-4 text-muted-foreground">
-                                                    No bookings today
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
+                    <BookingsDashboard selectedDate={selectedDate} />
                 </TabsContent>
 
                 {isAdmin && (

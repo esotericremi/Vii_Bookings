@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays, startOfWeek, isSameDay, parseISO } from "date-fns";
-import { Room, Booking } from "@/types/room";
+import { Room } from "@/types/room";
+import { BookingWithRelations } from "@/types/booking";
 
 interface CalendarViewProps {
   rooms: Room[];
-  bookings: Booking[];
+  bookings: BookingWithRelations[];
 }
 
 export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
@@ -26,10 +27,11 @@ export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
   };
 
   const getBookingsForRoomAndDay = (roomId: string, date: Date) => {
-    return bookings.filter(booking => 
-      booking.roomId === roomId && 
-      isSameDay(new Date(booking.startTime), date)
-    ).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    return bookings.filter(booking =>
+      booking.room_id === roomId &&
+      isSameDay(new Date(booking.start_time), date) &&
+      booking.status === 'confirmed'
+    ).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
   };
 
   const getTimeSlotPosition = (startTime: Date, endTime: Date) => {
@@ -40,8 +42,10 @@ export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
     return { top: `${Math.max(0, top)}%`, height: `${Math.min(100 - top, height)}%` };
   };
 
-  const getDepartmentColor = (email: string) => {
-    const department = email.split('@')[0].split('.')[0];
+  const getDepartmentColor = (userEmail?: string) => {
+    if (!userEmail) return 'bg-gray-500/20 border-gray-500/50 text-gray-700';
+
+    const department = userEmail.split('@')[0].split('.')[0];
     const colors = {
       'engineering': 'bg-blue-500/20 border-blue-500/50 text-blue-700',
       'marketing': 'bg-green-500/20 border-green-500/50 text-green-700',
@@ -84,13 +88,13 @@ export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
             {rooms.map((room, roomIndex) => {
               const dayBookings = getBookingsForRoomAndDay(room.id, day);
               return dayBookings.map((booking, bookingIndex) => {
-                const position = getTimeSlotPosition(new Date(booking.startTime), new Date(booking.endTime));
+                const position = getTimeSlotPosition(new Date(booking.start_time), new Date(booking.end_time));
                 const leftOffset = (roomIndex * 2) % 20; // Stagger bookings
-                
+
                 return (
                   <div
                     key={`${booking.id}-${roomIndex}`}
-                    className={`absolute rounded-md border-2 p-1 ${getDepartmentColor(booking.userEmail)} transition-all hover:scale-105 hover:z-10 cursor-pointer`}
+                    className={`absolute rounded-md border-2 p-1 ${getDepartmentColor(booking.user?.email)} transition-all hover:scale-105 hover:z-10 cursor-pointer`}
                     style={{
                       ...position,
                       left: `${leftOffset}%`,
@@ -105,7 +109,7 @@ export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
                     </div>
                     <div className="text-xs opacity-70">
                       <Clock className="inline w-3 h-3 mr-1" />
-                      {format(new Date(booking.startTime), 'HH:mm')}
+                      {format(new Date(booking.start_time), 'HH:mm')}
                     </div>
                   </div>
                 );
@@ -121,7 +125,7 @@ export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
     <div className="space-y-4">
       {rooms.map(room => {
         const dayBookings = getBookingsForRoomAndDay(room.id, currentDate);
-        
+
         return (
           <Card key={room.id} className="overflow-hidden">
             <CardHeader className="pb-3">
@@ -144,7 +148,7 @@ export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
                   {dayBookings.map(booking => (
                     <div
                       key={booking.id}
-                      className={`p-3 rounded-lg border-l-4 ${getDepartmentColor(booking.userEmail)}`}
+                      className={`p-3 rounded-lg border-l-4 ${getDepartmentColor(booking.user?.email)}`}
                     >
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium">{booking.title}</h4>
@@ -154,11 +158,11 @@ export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
                         <Clock className="inline w-4 h-4 mr-1" />
-                        {format(new Date(booking.startTime), 'HH:mm')} - {format(new Date(booking.endTime), 'HH:mm')}
+                        {format(new Date(booking.start_time), 'HH:mm')} - {format(new Date(booking.end_time), 'HH:mm')}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         <Users className="inline w-4 h-4 mr-1" />
-                        {booking.userEmail.split('@')[0]}
+                        {booking.user?.email?.split('@')[0] || 'Unknown'}
                       </div>
                     </div>
                   ))}
@@ -178,7 +182,7 @@ export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
           <h2 className="text-2xl font-bold">Meeting Calendar</h2>
           <p className="text-muted-foreground">See all department meetings at a glance</p>
         </div>
-        
+
         <div className="flex gap-2 items-center">
           <Select value={viewMode} onValueChange={(value: 'week' | 'day') => setViewMode(value)}>
             <SelectTrigger className="w-32">
@@ -189,22 +193,22 @@ export const CalendarView = ({ rooms, bookings }: CalendarViewProps) => {
               <SelectItem value="day">Day View</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Button variant="outline" size="icon" onClick={() => navigateDate('prev')}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          
+
           <Button
             variant="outline"
             onClick={() => setCurrentDate(new Date())}
             className="min-w-32"
           >
-            {viewMode === 'week' 
+            {viewMode === 'week'
               ? `Week of ${format(weekStart, 'MMM d')}`
               : format(currentDate, 'MMM d, yyyy')
             }
           </Button>
-          
+
           <Button variant="outline" size="icon" onClick={() => navigateDate('next')}>
             <ChevronRight className="w-4 h-4" />
           </Button>

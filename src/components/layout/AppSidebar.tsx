@@ -7,7 +7,6 @@ import {
     CalendarDays,
     BarChart3,
     Building2,
-    UserCheck,
     User,
     LogOut,
     ChevronDown
@@ -148,7 +147,7 @@ export const AppSidebar: React.FC = () => {
         <Sidebar>
             <SidebarHeader>
                 <div className="px-2 py-2">
-                    <Logo size="md" />
+                    <Logo size="md" showText={false} />
                 </div>
             </SidebarHeader>
 

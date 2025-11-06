@@ -10,6 +10,7 @@ import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { NetworkStatusProvider } from "@/components/shared/NetworkStatusProvider";
 import { AppStateProvider } from "@/components/shared/AppStateProvider";
 import { NetworkStatusBanner, FloatingNetworkStatus } from "@/components/shared/NetworkStatusBanner";
+import { BrandingProvider } from "@/contexts/BrandingContext";
 import { createQueryClient } from "@/lib/queryClient";
 import "@/utils/supabaseCheck"; // Make health check available in console
 import "@/utils/healthCheck"; // Make VII Bookings health check available
@@ -22,18 +23,20 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <NetworkStatusProvider>
         <AppStateProvider>
-          <AuthProvider>
-            <RealTimeSyncProvider enableToasts={true} enableAdminNotifications={true}>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <AppRouter />
-                  <FloatingNetworkStatus position="bottom-right" />
-                </BrowserRouter>
-              </TooltipProvider>
-            </RealTimeSyncProvider>
-          </AuthProvider>
+          <BrandingProvider>
+            <AuthProvider>
+              <RealTimeSyncProvider enableToasts={true} enableAdminNotifications={true}>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <AppRouter />
+                    <FloatingNetworkStatus position="bottom-right" />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </RealTimeSyncProvider>
+            </AuthProvider>
+          </BrandingProvider>
         </AppStateProvider>
       </NetworkStatusProvider>
     </QueryClientProvider>
